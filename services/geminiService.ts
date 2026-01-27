@@ -54,6 +54,10 @@ const MOCK_ASSESSMENT: AssessmentResult = {
   practicalReadinessScore: 2.8
 };
 
+export const getMockAssessment = (): Promise<AssessmentResult> => {
+  return new Promise(resolve => setTimeout(() => resolve(MOCK_ASSESSMENT), 1000));
+};
+
 export async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 3000): Promise<T> {
   try {
     return await fn();
@@ -105,7 +109,7 @@ export function robustJsonParse(raw: string): any {
 
 export const assessCareerProfile = async (profile: UserProfile): Promise<AssessmentResult> => {
   // MOCK MODE CHECK
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   // Explicit flag OR missing key triggers demo mode
   const isDemoMode = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true' || !apiKey || apiKey.includes('PASTE_YOUR');
 
@@ -118,7 +122,7 @@ export const assessCareerProfile = async (profile: UserProfile): Promise<Assessm
     // Initializing with API key directly from process.env as per guidelines
     const ai = new GoogleGenAI({ apiKey: apiKey as string });
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-1.5-flash',
       contents: `Sync Career Twin: ${JSON.stringify({
         name: profile.personalContext.name,
         role: profile.careerTarget.desiredRole,
@@ -126,8 +130,8 @@ export const assessCareerProfile = async (profile: UserProfile): Promise<Assessm
       })}`,
       config: {
         systemInstruction: SYSTEM_PROMPT,
-        responseMimeType: "application/json",
         tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
         maxOutputTokens: 8192
       }
     });

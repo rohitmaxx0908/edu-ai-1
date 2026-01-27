@@ -18,20 +18,23 @@ export const dbService = {
             return;
         }
 
-        const { error } = await supabase
-            .from('user_data')
-            .upsert(
-                {
-                    user_id: DEMO_USER_ID,
-                    profile: profile,
-                    updated_at: new Date().toISOString()
-                },
-                { onConflict: 'user_id' }
-            );
+        try {
+            const { error } = await supabase
+                .from('user_data')
+                .upsert(
+                    {
+                        user_id: DEMO_USER_ID,
+                        profile: profile,
+                        updated_at: new Date().toISOString()
+                    },
+                    { onConflict: 'user_id' }
+                );
 
-        if (error) {
-            console.error('Error saving profile to Supabase:', error);
-            throw error;
+            if (error) throw error;
+        } catch (err) {
+            console.error('Supabase save failed (falling back to local):', err);
+            // Fallback to local storage so user doesn't lose data
+            localStorage.setItem('enhance_ai_profile', JSON.stringify(profile));
         }
     },
 
