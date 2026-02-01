@@ -53,12 +53,12 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
         <div className="flex flex-col items-center md:items-end gap-3 shrink-0">
           <div className="flex gap-2">
             {profile.personalContext.githubUsername && (
-              <a href={`https://github.com/${profile.personalContext.githubUsername}`} target="_blank" className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-900 text-white hover:scale-110 transition-transform">
+              <a href={`https://github.com/${profile.personalContext.githubUsername}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-900 text-white hover:scale-110 transition-transform">
                 <i className="fa-brands fa-github text-sm"></i>
               </a>
             )}
             {profile.personalContext.linkedinUrl && (
-              <a href={profile.personalContext.linkedinUrl.startsWith('http') ? profile.personalContext.linkedinUrl : `https://${profile.personalContext.linkedinUrl}`} target="_blank" className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:scale-110 transition-transform">
+              <a href={profile.personalContext.linkedinUrl.startsWith('http') ? profile.personalContext.linkedinUrl : `https://${profile.personalContext.linkedinUrl}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:scale-110 transition-transform">
                 <i className="fa-brands fa-linkedin-in text-sm"></i>
               </a>
             )}
@@ -70,6 +70,7 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Content Area */}
         <div className="lg:col-span-8 space-y-6">
           {/* Smaller Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -86,41 +87,61 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Skill Distribution</h3>
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={visualSkillData} innerRadius={45} outerRadius={65} paddingAngle={5} dataKey="value" stroke="none">
-                      {visualSkillData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color || SKILL_COLORS[index % SKILL_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
-                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px', fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Problem Intensity</h3>
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={visualPerformanceData} cx="50%" cy="50%" outerRadius={65} innerRadius={45} dataKey="value" stroke="none">
-                      {visualPerformanceData.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="text-center mt-4">
-                <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest tracking-tighter">Solved: {profile.practiceOutput.problemsSolved}</p>
-              </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Skill Distribution</h3>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={visualSkillData} innerRadius={45} outerRadius={65} paddingAngle={5} dataKey="value" stroke="none">
+                    {visualSkillData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color || SKILL_COLORS[index % SKILL_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px', fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase' }} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Market Intelligence Section */}
+          {assessment.market_intel && (
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-6">
+                <i className="fa-solid fa-chart-line text-indigo-600 text-xs"></i>
+                <h3 className="text-[9px] font-black text-slate-900 uppercase tracking-widest">Market Intelligence (2025-26)</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                  <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Estimated Salary</p>
+                  <p className="text-sm font-black text-slate-900">{assessment.market_intel.salary_range}</p>
+                </div>
+                <div>
+                  <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Market Demand</p>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${assessment.market_intel.demand_level === 'HIGH' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                    <p className="text-sm font-black text-slate-900">{assessment.market_intel.demand_level}</p>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Trending Skills</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(assessment.market_intel.top_3_trending_skills || []).map((skill, i) => (
+                      <span key={i} className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[9px] font-bold">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <p className="text-[9px] text-slate-500 italic font-medium">
+                  <i className="fa-solid fa-quote-left mr-2 opacity-50"></i>
+                  {assessment.market_intel.market_sentiment}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Priority Stack Side column */}
@@ -164,8 +185,7 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
             <div key={i} className="p-6 hover:bg-slate-50/80 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-black text-slate-900 tracking-tight uppercase text-xs">{gap.title}</h4>
-                <span className={`px-2 py-0.5 text-[7px] font-black rounded uppercase ${gap.severity === 'CRITICAL' ? 'bg-red-50 text-red-600' : 'bg-indigo-50 text-indigo-600'
-                  }`}>
+                <span className={`px-2 py-0.5 text-[7px] font-black rounded uppercase ${gap.severity === 'CRITICAL' ? 'bg-red-50 text-red-600' : 'bg-indigo-50 text-indigo-600'}`}>
                   {gap.severity}
                 </span>
               </div>

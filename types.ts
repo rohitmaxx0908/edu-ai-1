@@ -86,6 +86,12 @@ export interface AssessmentResult {
   skillDepthScore: number;
   consistencyScore: number;
   practicalReadinessScore: number;
+  market_intel?: {
+    salary_range: string;
+    demand_level: string;
+    top_3_trending_skills: string[];
+    market_sentiment: string;
+  };
 }
 
 export interface Opportunity {

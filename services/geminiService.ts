@@ -3,13 +3,14 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, AssessmentResult, LearningStep } from "../types";
 
 const SYSTEM_PROMPT = `SYSTEM ROLE:
-You are the Edu AI Digital Twin. Your output MUST be a valid JSON object.
+You are the Edu AI Digital Twin, a deterministic career agent. Your primary objective is to evaluate the user's career profile and provide a data-driven roadmap grounded in REAL-TIME 2025-2026 market trends.
 
-CONSTRAINTS:
-1. FORMAT: Raw JSON only. No markdown. No preamble.
-2. BREVITY: Keep descriptions and impact fields under 10 words.
-3. GROUNDING: Use Google Search for REAL URLs. NO [1][2] citations.
-4. ROADMAP: Exactly 6 chronological steps.
+OUTPUT CONSTRAINTS:
+1. FORMAT: You MUST respond ONLY with a raw JSON object. No markdown snippets, no preamble, no "Here is the report".
+2. BREVITY: Keep descriptions, impacts, and actions extremely concise (under 12 words).
+3. GROUNDING: Use Google Search to find ACTIVE job market data, salary bands for 2025, and VALID URLs for learning resources.
+4. CONSISTENCY: Ensure scores (0.0 - 5.0) reflect the gaps identified.
+5. ROADMAP: Provide exactly 6 logical learning steps in chronological order.
 
 JSON SCHEMA:
 {
@@ -20,7 +21,13 @@ JSON SCHEMA:
   "level": string,
   "skillDepthScore": number,
   "consistencyScore": number,
-  "practicalReadinessScore": number
+  "practicalReadinessScore": number,
+  "market_intel": {
+    "salary_range": string,
+    "demand_level": string,
+    "top_3_trending_skills": string[],
+    "market_sentiment": string
+  }
 }
 
 Current Date: ${new Date().toISOString().split('T')[0]}`;
@@ -51,7 +58,13 @@ const MOCK_ASSESSMENT: AssessmentResult = {
   level: "JUNIOR ASSOCIATE",
   skillDepthScore: 3.2,
   consistencyScore: 4.5,
-  practicalReadinessScore: 2.8
+  practicalReadinessScore: 2.8,
+  market_intel: {
+    salary_range: "$80k - $120k",
+    demand_level: "HIGH",
+    top_3_trending_skills: ["System Design", "Kubernetes", "Redis"],
+    market_sentiment: "Optimistic but competitive"
+  }
 };
 
 export const getMockAssessment = (): Promise<AssessmentResult> => {
@@ -75,11 +88,16 @@ export async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 30
 
 /**
  * Advanced JSON repair engine.
+ * Handles common AI JSON errors like:
+ * - Markdown snippets
+ * - Trailing commas
+ * - Incomplete objects
+ * - Truncated responses
+ * - Extraneous commentary
  */
 export function robustJsonParse(raw: string): any {
   if (!raw) throw new Error("Empty signal.");
 
-  // Clean obvious noise
   let clean = raw.trim()
     .replace(/\[\d+\]/g, '') // Scrub [1]
     .replace(/【.*?】/g, '') // Scrub 【source】
@@ -92,18 +110,74 @@ export function robustJsonParse(raw: string): any {
 
   if (startIdx === -1) throw new Error("No structure found.");
 
-  let jsonPart = clean.substring(startIdx);
+  let text = clean.substring(startIdx);
 
-  // State-Machine Repair (Simplified for brevity as exact original logic is long, but keeping intent)
-  // ... (Repaired logic would go here, effectively just using JSON.parse for now as fallback if simple)
+  // 1. Basic JSON.parse attempt
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Continue to repair
+  }
+
+  // 2. Trailing Comma Repair
+  text = text.replace(/,\s*([}\]])/g, '$1');
+
+  // 3. State-Machine Repair & Truncation Handling
+  let openBraces = 0;
+  let openBrackets = 0;
+  let inString = false;
+  let lastValidIndex = 0;
+  let foundEnd = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    // Handle strings (including escaped quotes)
+    if (char === '"' && text[i - 1] !== '\\') {
+      inString = !inString;
+    }
+
+    if (!inString) {
+      if (char === '{') openBraces++;
+      if (char === '}') openBraces--;
+      if (char === '[') openBrackets++;
+      if (char === ']') openBrackets--;
+
+      if (openBraces === 0 && openBrackets === 0 && i > 0) {
+        lastValidIndex = i + 1;
+        foundEnd = true;
+        break; // Stop at the first complete top-level structure
+      }
+
+      if (openBraces >= 0 && openBrackets >= 0) {
+        lastValidIndex = i + 1;
+      } else {
+        break; // Imbalanced structure
+      }
+    }
+  }
+
+  let finalCandidate = text.substring(0, lastValidIndex);
+
+  // 4. Close missing brackets if truncated
+  if (!foundEnd) {
+    let tempBraces = openBraces;
+    let tempBrackets = openBrackets;
+    while (tempBraces > 0) { finalCandidate += '}'; tempBraces--; }
+    while (tempBrackets > 0) { finalCandidate += ']'; tempBrackets--; }
+  }
 
   try {
-    return JSON.parse(jsonPart);
+    return JSON.parse(finalCandidate);
   } catch (e) {
-    // If simple parse fails, use the robust one from original file if needed,
-    // or just return valid mocked structure/error if truly broken.
-    // For this edit, we assume standard parse is likely okay or we fail to fallback.
-    throw new Error("Complex JSON repair failed.");
+    // 5. Final Fallback: quote repair
+    try {
+      const fixedQuotes = finalCandidate.replace(/'/g, '"');
+      return JSON.parse(fixedQuotes);
+    } catch (finalError) {
+      console.error("Critical JSON failure:", finalCandidate);
+      throw new Error(`Twin Sync Protocol Violation: ${finalError instanceof Error ? finalError.message : String(finalError)}`);
+    }
   }
 }
 
