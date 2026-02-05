@@ -46,72 +46,37 @@ const MOCK_OPPORTUNITIES: Opportunity[] = [
 ];
 
 export const fetchTailoredOpportunities = async (profile: UserProfile): Promise<Opportunity[]> => {
-  // MOCK MODE CHECK
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  const isDemoMode = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true' || !apiKey || apiKey.includes('PASTE_YOUR');
+  const isDemoMode = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  if (isDemoMode) {
+  if (isDemoMode || !backendUrl) {
     console.warn("DEMO MODE: Using Mock Opportunities");
     return new Promise(resolve => setTimeout(() => resolve(MOCK_OPPORTUNITIES), 1200));
   }
 
   try {
     return await withRetry(async () => {
-      // Use the correct Vite environment variable
-      const keyToUse = apiKey || '';
-      if (!keyToUse) throw new Error("Missing API Key");
-
-      const ai = new GoogleGenAI({ apiKey: keyToUse });
-
-      // Map skill keys to readable labels
-      const SKILL_LABELS: Record<string, string> = {
-        programmingFundamentals: 'Fundamentals',
-        dsa: 'DSA',
-        development: 'Dev',
-        databases: 'Databases',
-        systemDesign: 'System Design',
-        mathStats: 'Math',
-        aiMl: 'AI/ML',
-      };
-
-      // Extract top skills (score >= 3)
-      const topSkills = Object.entries(profile.skillInventory)
-        .filter(([_, score]) => (score as number) >= 3)
-        .map(([key]) => SKILL_LABELS[key] || key)
-        .join(", ");
-
-      // Use stable 1.5-flash model with Search enabled
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents: `Act as a Career Agent. Use Google Search to find REAL, ACTIVE (2025-2026) internships, hackathons, and conferences for a ${profile.careerTarget.desiredRole}.
-
-        USER CONTEXT:
-        - Skills: ${topSkills}
-        - Education: ${profile.personalContext.fieldOfStudy} student at ${profile.personalContext.institutionName}
-
-        Focus on opportunities relevant to these skills and level.
-        Must be real URL links.
-        Strict JSON array output only. No markdown.`,
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          maxOutputTokens: 2000,
-        }
+      const response = await fetch(`${backendUrl}/opportunities/fetch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile })
       });
 
-      const text = response.text;
-      const parsed = robustJsonParse(text || "[]");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch opportunities');
+      }
 
-      // Validation: Ensure we have at least some data
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+      const result = await response.json();
+      
+      if (Array.isArray(result.data) && result.data.length > 0) {
+        return result.data;
       }
       throw new Error("No opportunities found");
 
     }, 2, 2000);
   } catch (error) {
     console.warn("Real Data Sync Failed (Using Fallback):", error);
-    // Silent fallback to mock data so UI never breaks
     return MOCK_OPPORTUNITIES;
   }
 };

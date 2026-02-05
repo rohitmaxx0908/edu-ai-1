@@ -3,6 +3,7 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { AssessmentResult, UserProfile } from '../types';
 import { SKILL_LABELS } from '../constants';
+import { fetchNews, NewsArticle } from '../api/backend';
 
 interface DashboardProps {
   assessment: AssessmentResult;
@@ -11,6 +12,19 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) => {
+  const [techNews, setTechNews] = React.useState<NewsArticle[]>([]);
+  const [loadingNews, setLoadingNews] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadNews = async () => {
+      setLoadingNews(true);
+      const news = await fetchNews();
+      setTechNews(news.slice(0, 3)); // Only show top 3
+      setLoadingNews(false);
+    };
+    loadNews();
+  }, []);
+
   const skillData = Object.entries(profile.skillInventory).map(([key, value]) => ({
     name: SKILL_LABELS[key],
     value: value,
@@ -53,12 +67,12 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
         <div className="flex flex-col items-center md:items-end gap-3 shrink-0">
           <div className="flex gap-2">
             {profile.personalContext.githubUsername && (
-              <a href={`https://github.com/${profile.personalContext.githubUsername}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-900 text-white hover:scale-110 transition-transform">
+              <a href={`https://github.com/${profile.personalContext.githubUsername}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-900 text-white hover:scale-110 transition-transform" aria-label="GitHub profile">
                 <i className="fa-brands fa-github text-sm"></i>
               </a>
             )}
             {profile.personalContext.linkedinUrl && (
-              <a href={profile.personalContext.linkedinUrl.startsWith('http') ? profile.personalContext.linkedinUrl : `https://${profile.personalContext.linkedinUrl}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:scale-110 transition-transform">
+              <a href={profile.personalContext.linkedinUrl.startsWith('http') ? profile.personalContext.linkedinUrl : `https://${profile.personalContext.linkedinUrl}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:scale-110 transition-transform" aria-label="LinkedIn profile">
                 <i className="fa-brands fa-linkedin-in text-sm"></i>
               </a>
             )}
@@ -142,6 +156,53 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
               </div>
             </div>
           )}
+
+          {/* Technology News Section */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-6">
+              <i className="fa-solid fa-newspaper text-indigo-600 text-xs"></i>
+              <h3 className="text-[9px] font-black text-slate-900 uppercase tracking-widest">Technology Headlines</h3>
+            </div>
+
+            {loadingNews ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="animate-pulse flex space-x-4">
+                    <div className="flex-1 space-y-2 py-1">
+                      <div className="h-2 bg-slate-200 rounded w-3/4"></div>
+                      <div className="h-2 bg-slate-200 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : techNews.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {techNews.map((article, i) => (
+                  <a
+                    key={i}
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block p-4 rounded-2xl bg-slate-50 hover:bg-slate-900 transition-all border border-slate-100 hover:border-slate-900"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[7px] font-black text-indigo-600 group-hover:text-indigo-400 uppercase tracking-widest">
+                        {article.source.name}
+                      </span>
+                      <span className="text-[7px] font-black text-slate-400 group-hover:text-slate-500 uppercase">
+                        {new Date(article.publishedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-black text-slate-900 group-hover:text-white leading-snug">
+                      {article.title}
+                    </h4>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-slate-500 italic font-medium">No recent headlines found.</p>
+            )}
+          </div>
         </div>
 
         {/* Priority Stack Side column */}

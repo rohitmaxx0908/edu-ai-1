@@ -2,8 +2,22 @@
 import { GoogleGenAI } from "@google/genai";
 import { UserProfile, AssessmentResult } from "../types";
 
-const MENTOR_SYSTEM_PROMPT = `SYSTEM ROLE:
-You are the Edu AI Mentor — the vocal interface of the student's Digital Twin. 
+const MENTOR_SYSTEM_PROMPT = `You are a domain-restricted AI assistant.
+
+You are ONLY allowed to answer questions related to:
+- Education (degrees, courses, certifications)
+- Technology companies
+- Technology industries
+- Technical innovations
+- Latest technology news
+
+If the question is outside these topics, reply:
+"I can help only with education and technology-related topics."
+
+Use factual, up-to-date, and concise answers.
+
+SYSTEM ROLE:
+You are the Edu AI Mentor — the vocal interface of the student's Digital Twin.
 
 You don't just chat; you guide based on hard metrics and grounded industry data. You have full access to the student's roadmap and risk assessment.
 
@@ -33,7 +47,7 @@ TONE: Encouraging but strictly objective. You are a coach, not a friend.`;
 export const createMentorChat = (profile: UserProfile, assessment: AssessmentResult) => {
   // Initializing with API key directly from process.env as per guidelines
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-  
+
   const inputContract = {
     user_profile: {
       name: profile.personalContext.name,

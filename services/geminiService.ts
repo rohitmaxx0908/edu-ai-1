@@ -2,7 +2,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, AssessmentResult, LearningStep } from "../types";
 
-const SYSTEM_PROMPT = `SYSTEM ROLE:
+const SYSTEM_PROMPT = `You are a domain-restricted AI assistant.
+
+You are ONLY allowed to answer questions related to:
+- Education (degrees, courses, certifications)
+- Technology companies
+- Technology industries
+- Technical innovations
+- Latest technology news
+
+If the question is outside these topics, reply:
+"I can help only with education and technology-related topics."
+
+Use factual, up-to-date, and concise answers.
+
+SYSTEM ROLE:
 You are the Edu AI Digital Twin, a deterministic career agent. Your primary objective is to evaluate the user's career profile and provide a data-driven roadmap grounded in REAL-TIME 2025-2026 market trends.
 
 OUTPUT CONSTRAINTS:
@@ -45,13 +59,33 @@ const MOCK_ASSESSMENT: AssessmentResult = {
   learning_roadmap: [
     {
       id: "step-1", type: "VIDEO", title: "System Design Primer", topic: "Architecture",
-      provider: "YouTube / Gaurav Sen", duration: "45m", description: "Foundational breakdown of load balancers.",
+      provider: "YouTube / Gaurav Sen", duration: "45m", description: "Foundational breakdown of load balancers and horizontal scaling.",
       url: "https://www.youtube.com/watch?v=xpDnVSmNFX0", scheduledDate: new Date().toISOString().split('T')[0]
     },
     {
       id: "step-2", type: "PRACTICE", title: "Design URL Shortener", topic: "System Design",
-      provider: "Educative.io", duration: "2h", description: "Classic interview problem implementation.",
+      provider: "Educative.io", duration: "2h", description: "Classic interview problem focusing on database schema and hashing.",
       url: "https://www.educative.io/", scheduledDate: new Date(Date.now() + 86400000).toISOString().split('T')[0]
+    },
+    {
+      id: "step-3", type: "COURSE", title: "Advanced SQL Optimization", topic: "Database",
+      provider: "Pluralsight", duration: "3h", description: "Deep dive into indexing strategies and query execution plans.",
+      url: "https://www.pluralsight.com/", scheduledDate: new Date(Date.now() + 172800000).toISOString().split('T')[0]
+    },
+    {
+      id: "step-4", type: "QUIZ", title: "Docker & K8s Fundamentals", topic: "DevOps",
+      provider: "KodeKloud", duration: "30m", description: "Assessment of containerization concepts and orchestration basics.",
+      url: "https://kodekloud.com/", scheduledDate: new Date(Date.now() + 259200000).toISOString().split('T')[0]
+    },
+    {
+      id: "step-5", type: "PRACTICE", title: "Build a CI/CD Pipeline", topic: "DevOps",
+      provider: "GitHub Actions Guide", duration: "4h", description: "Practical implementation of automated testing and deployment.",
+      url: "https://docs.github.com/en/actions", scheduledDate: new Date(Date.now() + 345600000).toISOString().split('T')[0]
+    },
+    {
+      id: "step-6", type: "COURSE", title: "Security Best Practices", topic: "Security",
+      provider: "OWASP", duration: "5h", description: "Comprehensive guide to preventing top 10 web vulnerabilities.",
+      url: "https://owasp.org/", scheduledDate: new Date(Date.now() + 432000000).toISOString().split('T')[0]
     }
   ],
   career_risk_assessment: "Moderate Risk: Practical project portfolio is thin compared to theoretical knowledge.",
@@ -182,33 +216,29 @@ export function robustJsonParse(raw: string): any {
 }
 
 export const assessCareerProfile = async (profile: UserProfile): Promise<AssessmentResult> => {
-  // MOCK MODE CHECK
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  // Explicit flag OR missing key triggers demo mode
-  const isDemoMode = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true' || !apiKey || apiKey.includes('PASTE_YOUR');
+  // Check for demo mode
+  const isDemoMode = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  if (isDemoMode) {
+  if (isDemoMode || !backendUrl) {
     console.warn("DEMO MODE: Using Mock AI Assessment");
     return new Promise(resolve => setTimeout(() => resolve(MOCK_ASSESSMENT), 1500));
   }
 
+  // Call backend instead of direct Gemini API
   return withRetry(async () => {
-    // Initializing with API key directly from process.env as per guidelines
-    const ai = new GoogleGenAI({ apiKey: apiKey as string });
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: `Sync Career Twin: ${JSON.stringify({
-        name: profile.personalContext.name,
-        role: profile.careerTarget.desiredRole,
-        skills: profile.skillInventory
-      })}`,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        tools: [{ googleSearch: {} }],
-        responseMimeType: "application/json",
-        maxOutputTokens: 8192
-      }
+    const response = await fetch(`${backendUrl}/assessment/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile)
     });
-    return robustJsonParse(response.text || "");
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Assessment failed');
+    }
+
+    const result = await response.json();
+    return result.data;
   });
 };

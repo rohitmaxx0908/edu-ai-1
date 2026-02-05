@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, AssessmentResult } from './types';
 import { INITIAL_PROFILE } from './constants';
-import { assessCareerProfile } from './services/geminiService';
+import { assessCareer } from './api/backend';
 import { dbService } from './services/dbService';
 import ProfileForm from './components/ProfileForm';
 import Dashboard from './components/Dashboard';
 import ChatMentor from './components/ChatMentor';
 import SocialHub from './components/SocialHub';
 import Academics from './components/Academics';
+import NewsHub from './components/NewsHub';
 
-type ViewMode = 'dashboard' | 'mentor' | 'social' | 'academics';
+type ViewMode = 'dashboard' | 'mentor' | 'social' | 'academics' | 'news';
 
 const App: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -38,12 +39,16 @@ const App: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // First save the profile to DB
-      await dbService.saveProfile(data);
+      // First save the profile to DB (non-blocking if storage unavailable)
+      try {
+        await dbService.saveProfile(data);
+      } catch (saveErr) {
+        console.warn("Profile save failed, continuing:", saveErr);
+      }
 
       setProfile(data); // Optimistically set profile so we can render dashboard immediately upon success/fallback
 
-      const result = await assessCareerProfile(data);
+      const result = await assessCareer(data);
       if (!result || !result.learning_roadmap) {
         throw new Error("The Twin Agent generated an unstable dataset.");
       }
@@ -113,7 +118,7 @@ const App: React.FC = () => {
 
               {assessment && (
                 <div className="hidden md:flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                  {['dashboard', 'academics', 'mentor', 'social'].map((mode) => (
+                  {['dashboard', 'academics', 'mentor', 'social', 'news'].map((mode) => (
                     <button
                       key={mode}
                       onClick={() => setViewMode(mode as ViewMode)}
@@ -184,6 +189,10 @@ const App: React.FC = () => {
         ) : viewMode === 'mentor' ? (
           <div className="h-[calc(100vh-64px)] overflow-hidden">
             <ChatMentor profile={profile!} assessment={assessment} />
+                  ) : viewMode === 'news' ? (
+                    <div className="h-[calc(100vh-64px)] overflow-hidden">
+                      <NewsHub careerTarget={profile!.careerTarget.desiredRole} />
+                    </div>
           </div>
         ) : (
           <SocialHub profile={profile!} />

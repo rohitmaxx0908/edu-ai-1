@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, AssessmentResult } from '../types';
-import { createMentorChat } from '../services/chatService';
+import { askAI } from '../api/backend';
 
 interface Message {
   role: 'user' | 'model';
@@ -17,23 +17,13 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  const chatInstance = useRef<any>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
 
   useEffect(() => {
     const initChat = async () => {
-      chatInstance.current = createMentorChat(profile, assessment);
-      setIsLoading(true);
-      try {
-        const response = await chatInstance.current.sendMessage({ message: "INITIALIZE_TWIN_SYNC" });
-        setMessages([{ role: 'model', text: response.text || "Digital Twin synchronized. Awaiting strategic command." }]);
-      } catch (err) {
-        setMessages([{ role: 'model', text: "CRITICAL: TWIN SYNC FAILED. RE-ESTABLISHING UPLINK..." }]);
-      } finally {
-        setIsLoading(false);
-      }
+      setMessages([{ role: 'model', text: "Digital Twin synchronized. Grounding engine active. Awaiting strategic command." }]);
     };
 
     if (!initialized.current) {
@@ -57,8 +47,20 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
     setIsLoading(true);
 
     try {
-      const response = await chatInstance.current.sendMessage({ message: msgToSend });
-      setMessages(prev => [...prev, { role: 'model', text: response.text || 'Error: Uptime conflict.' }]);
+      // Build context string from user profile and assessment
+      const context = `
+User Profile Context:
+- Current Role: ${profile.currentRole || 'Not specified'}
+- Target Role: ${profile.targetRole || 'Not specified'}
+- Skills: ${profile.skills?.join(', ') || 'Not specified'}
+- Experience Level: ${assessment?.experienceLevel || 'Not specified'}
+- Career Goals: ${profile.careerGoals || 'Not specified'}
+- Learning Preferences: ${profile.learningStyle || 'Not specified'}
+
+User Query: ${msgToSend}`;
+
+      const response = await askAI(context);
+      setMessages(prev => [...prev, { role: 'model', text: response.answer || 'Error: Uptime conflict.' }]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'model', text: 'SYSTEM ERROR: Uplink to Twin Agent lost.' }]);
     } finally {
@@ -70,7 +72,7 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
     const textNodes = msg.text.split('\n').map((line, i) => {
       const trimmed = line.trim();
       if (!trimmed) return <div key={i} className="h-4" />;
-      
+
       if (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 60 && !trimmed.startsWith('•')) {
         return (
           <div key={i} className="mt-12 mb-6 first:mt-0">
@@ -81,7 +83,7 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
           </div>
         );
       }
-      
+
       if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.match(/^\d\./)) {
         return (
           <div key={i} className="flex gap-4 ml-2 mb-4 items-start group">
@@ -126,19 +128,19 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
         <div className="mb-10">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Grounded Logic</label>
           <div className="space-y-3">
-             {assessment.next_priority_actions.slice(0, 2).map((act, idx) => (
-               <div key={idx} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                 <p className="text-[9px] font-black text-indigo-600 uppercase mb-1">Priority 0{act.order}</p>
-                 <p className="text-[11px] font-bold text-slate-700 leading-tight">{act.action}</p>
-               </div>
-             ))}
+            {assessment.next_priority_actions.slice(0, 2).map((act, idx) => (
+              <div key={idx} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                <p className="text-[9px] font-black text-indigo-600 uppercase mb-1">Priority 0{act.order}</p>
+                <p className="text-[11px] font-bold text-slate-700 leading-tight">{act.action}</p>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="mt-auto">
           <div className="p-5 bg-slate-900 rounded-2xl text-white relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-               <i className="fa-solid fa-brain text-4xl"></i>
+              <i className="fa-solid fa-brain text-4xl"></i>
             </div>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 opacity-50 relative z-10">Agent Intelligence</p>
             <p className="text-[11px] font-medium leading-relaxed relative z-10">A personalized mentoring stream grounded in your career trajectory and skill inventory.</p>
@@ -152,12 +154,12 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
           <div className="flex flex-col">
             <h2 className="text-slate-900 font-black text-xs uppercase tracking-[0.4em]">Twin Dialogue Workspace</h2>
             <div className="flex items-center gap-2 mt-1">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Profile Synced: {profile.personalContext.name}</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Profile Synced: {profile.personalContext.name}</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
-             <button onClick={() => setMessages([])} className="text-[9px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors">Clear Stream</button>
+            <button onClick={() => setMessages([])} className="text-[9px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors">Clear Stream</button>
           </div>
         </header>
 
@@ -177,7 +179,7 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
                 </div>
               </div>
             ))}
-            
+
             {isLoading && (
               <div className="flex items-center gap-4 py-6">
                 <div className="flex gap-1">
@@ -220,10 +222,11 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
                 placeholder="Synchronize with your Twin Agent..."
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium focus:bg-white focus:ring-1 focus:ring-slate-900 outline-none transition-all pr-16 shadow-inner"
               />
-              <button 
+              <button
                 onClick={() => handleSend()}
                 disabled={isLoading || !input.trim()}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-slate-900 text-white rounded-xl disabled:bg-slate-100 disabled:text-slate-300 transition-all hover:bg-indigo-600 active:scale-95 shadow-md shadow-slate-900/10"
+                aria-label="Send message"
               >
                 <i className="fa-solid fa-arrow-up text-sm"></i>
               </button>

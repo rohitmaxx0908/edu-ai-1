@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { UserProfile, AssessmentResult, LearningStep } from '../types';
 
@@ -108,7 +109,17 @@ const Academics: React.FC<AcademicsProps> = ({ profile, assessment, onUpdateProf
             </div>
           </div>
           <div className="mt-12 h-2 bg-white/5 rounded-full overflow-hidden relative">
-             <div className="absolute left-0 top-0 h-full bg-indigo-500 transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(99,102,241,0.5)]" style={{ width: `${progressPercent}%` }}></div>
+             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions,react/no-unknown-property */}
+             <div 
+               className="absolute left-0 top-0 h-full bg-indigo-500 transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(99,102,241,0.5)]" 
+               data-testid="progress-bar"
+               role="progressbar"
+               aria-label="Learning progress"
+               data-value={Math.round(progressPercent)}
+               data-min="0"
+               data-max="100"
+               style={{ width: `${progressPercent}%` }}
+             ></div>
           </div>
         </div>
       </div>
@@ -161,7 +172,11 @@ const Academics: React.FC<AcademicsProps> = ({ profile, assessment, onUpdateProf
                                <span className="text-indigo-500/50">{step.duration}</span>
                              </div>
                            </div>
-                           <button onClick={() => setActiveStep(isActive ? null : step.id)} className="text-slate-200 hover:text-slate-900 transition-colors px-2">
+                           <button 
+                             onClick={() => setActiveStep(isActive ? null : step.id)} 
+                             className="text-slate-200 hover:text-slate-900 transition-colors px-2"
+                             aria-label={isActive ? 'Collapse details' : 'Expand details'}
+                           >
                              <i className={`fa-solid fa-chevron-${isActive ? 'up' : 'down'} text-[10px]`}></i>
                            </button>
                         </div>
@@ -201,8 +216,8 @@ const Academics: React.FC<AcademicsProps> = ({ profile, assessment, onUpdateProf
               <div className="flex justify-between items-center mb-6 px-2">
                  <span className="text-[10px] font-black text-slate-900 uppercase">{currentDate.toLocaleString('default', { month: 'short' })}</span>
                  <div className="flex gap-2">
-                    <button onClick={() => changeMonth(-1)} className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors"><i className="fa-solid fa-chevron-left text-[8px]"></i></button>
-                    <button onClick={() => changeMonth(1)} className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors"><i className="fa-solid fa-chevron-right text-[8px]"></i></button>
+                    <button onClick={() => changeMonth(-1)} className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors" aria-label="Previous month"><i className="fa-solid fa-chevron-left text-[8px]"></i></button>
+                    <button onClick={() => changeMonth(1)} className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors" aria-label="Next month"><i className="fa-solid fa-chevron-right text-[8px]"></i></button>
                  </div>
               </div>
               <div className="grid grid-cols-7 gap-1 text-center mb-4">

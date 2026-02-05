@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, Opportunity } from '../types';
-import { fetchTailoredOpportunities } from '../services/opportunityService';
+import { fetchOpportunities, fetchRssFeeds } from '../api/backend';
 
 interface SocialHubProps {
   profile: UserProfile;
@@ -9,6 +9,7 @@ interface SocialHubProps {
 
 const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [newsHeadlines, setNewsHeadlines] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('ALL');
@@ -21,13 +22,17 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchTailoredOpportunities(profile);
-      setOpportunities(data || []);
+      const [opps, news] = await Promise.all([
+        fetchOpportunities(profile),
+        fetchRssFeeds()
+      ]);
+      setOpportunities(opps || []);
+      setNewsHeadlines(news || []);
       hasLoaded.current = true;
     } catch (err: any) {
       console.error("Social Hub Error:", err);
-      const msg = err?.message?.includes('429') || err?.status === 429 
-        ? "Grounding Engine capacity reached. Retrying..." 
+      const msg = err?.message?.includes('429') || err?.status === 429
+        ? "Grounding Engine capacity reached. Retrying..."
         : "Failed to sync market opportunities.";
       setError(msg);
     } finally {
@@ -52,8 +57,8 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
     const oppType = (o.type || '').toUpperCase().trim();
     const currentFilter = filter.toUpperCase();
     const matchesFilter = currentFilter === 'ALL' || oppType === currentFilter;
-    const matchesSearch = (o.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
-                         (o.company?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+    const matchesSearch = (o.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (o.company?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -79,7 +84,7 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-2 space-y-6 animate-in fade-in duration-1000">
-      
+
       {/* Market Pulse Ticker */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden px-4 py-2 flex items-center gap-6 shadow-sm">
         <div className="flex items-center gap-2 shrink-0 border-r border-slate-100 pr-4">
@@ -87,14 +92,14 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
           <span className="text-[9px] font-black uppercase tracking-widest text-slate-900">Vitals</span>
         </div>
         <div className="flex-1 overflow-hidden whitespace-nowrap">
-          <div className="flex gap-12 animate-marquee inline-block">
-            {[
+          <div className="flex gap-12 animate-marquee inline-block" role="marquee" aria-live="off">
+            {(newsHeadlines.length > 0 ? newsHeadlines : [
               `Edu AI: ${profile.careerTarget.desiredRole} hiring +18%`,
               "Tech Winter Thawing: Big Tech hiring resumption noticed",
               "Skill Pivot: Vector Database expertise demand peaking",
               "Regional Insight: APAC Remote hubs expanding",
               "Competition: Major Hackathon in 14 days"
-            ].map((msg, i) => (
+            ]).map((msg, i) => (
               <span key={i} className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">
                 <span className="text-indigo-600 mr-2">●</span> {msg}
               </span>
@@ -106,7 +111,7 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
       {/* Discover Hero: Decreased length, Increased breath */}
       <div className="relative bg-slate-900 rounded-3xl p-6 lg:p-8 overflow-hidden shadow-2xl border border-slate-800">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indigo-500/10 to-transparent pointer-events-none"></div>
-        
+
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
           <div className="space-y-1 w-full lg:w-auto">
             <div className="flex items-center gap-2 mb-2">
@@ -124,25 +129,24 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-3/5">
             <div className="relative flex-1 group">
               <i className="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 text-xs"></i>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Query market index..."
                 className="w-full pl-12 pr-6 py-4 bg-white/5 border border-slate-700/50 rounded-2xl text-white placeholder-slate-600 outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all font-bold text-xs backdrop-blur-md"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
+
             <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-slate-700/50 backdrop-blur-md overflow-x-auto no-scrollbar">
               {['ALL', 'INTERNSHIP', 'EVENT', 'COMPETITION'].map(t => (
                 <button
                   key={t}
                   onClick={() => setFilter(t)}
-                  className={`px-6 py-2.5 text-[8px] font-black uppercase tracking-[0.2em] rounded-xl transition-all whitespace-nowrap ${
-                    filter === t 
-                      ? 'bg-white text-slate-900 shadow-xl' 
+                  className={`px-6 py-2.5 text-[8px] font-black uppercase tracking-[0.2em] rounded-xl transition-all whitespace-nowrap ${filter === t
+                      ? 'bg-white text-slate-900 shadow-xl'
                       : 'text-slate-500 hover:text-white hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   {t}
                 </button>
@@ -163,11 +167,12 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
           {filtered.length > 0 ? filtered.map((opp, idx) => {
             const styles = getTypeStyles(opp.type);
             const isSaved = savedIds.has(opp.id);
-            
+
             return (
-              <div 
-                key={opp.id} 
+              <div
+                key={opp.id}
                 className="group relative flex flex-col bg-white border border-slate-200 rounded-[2rem] transition-all duration-500 hover:shadow-2xl hover:border-indigo-600/30 animate-in fade-in slide-in-from-bottom-8 overflow-hidden"
+                data-testid={`opportunity-${opp.id}`}
                 style={{ animationDelay: `${idx * 100}ms` }}
               >
                 <div className="p-8 pb-0 flex-1">
@@ -179,14 +184,15 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
                       <div className="flex flex-col">
                         <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">{opp.type}</span>
                         <div className="flex items-center gap-2 mt-0.5">
-                           <span className="text-[11px] font-black text-slate-900">{opp.company}</span>
-                           <span className="text-[10px] font-bold text-slate-400">{opp.location || 'Distributed'}</span>
+                          <span className="text-[11px] font-black text-slate-900">{opp.company}</span>
+                          <span className="text-[10px] font-bold text-slate-400">{opp.location || 'Distributed'}</span>
                         </div>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => toggleSave(opp.id)}
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-rose-50 text-rose-500 shadow-sm' : 'text-slate-200 hover:text-slate-900 hover:bg-slate-50'}`}
+                      aria-label={isSaved ? 'Remove bookmark' : 'Bookmark opportunity'}
                     >
                       <i className={`fa-${isSaved ? 'solid' : 'regular'} fa-bookmark text-sm`}></i>
                     </button>
@@ -201,10 +207,19 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
                       <div className="space-y-1">
                         <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Match Compatibility</span>
                         <div className="flex items-center gap-2">
-                           <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-indigo-500 transition-all duration-1000 delay-300" style={{ width: `${opp.matchScore}%` }}></div>
-                           </div>
-                           <span className="text-[11px] font-black text-indigo-600">{opp.matchScore}%</span>
+                          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div 
+                              className="h-full bg-indigo-500 transition-all duration-1000 delay-300" 
+                              data-testid="match-score-bar"
+                              role="progressbar"
+                              aria-label="Match score"
+                              data-value={Math.round(opp.matchScore)}
+                              data-min="0"
+                              data-max="100"
+                              style={{ width: `${opp.matchScore}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-[11px] font-black text-indigo-600">{opp.matchScore}%</span>
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -230,41 +245,41 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
                     ))}
                   </div>
 
-                  <a 
-                    href={opp.url} 
-                    target="_blank" 
+                  <a
+                    href={opp.url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-3 w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-600 hover:translate-y-[-2px] hover:shadow-2xl active:scale-95 transition-all duration-300"
                   >
                     <span>Analyze Module</span>
                     <i className="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
                   </a>
-                  
+
                   <div className="flex justify-between items-center mt-6">
-                     <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">
-                       Closes: {opp.deadline || 'Rolling'}
-                     </span>
-                     <div className="flex gap-2">
-                        <i className="fa-brands fa-linkedin text-slate-300 hover:text-blue-600 cursor-pointer text-xs"></i>
-                        <i className="fa-brands fa-x-twitter text-slate-300 hover:text-slate-900 cursor-pointer text-xs"></i>
-                     </div>
+                    <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">
+                      Closes: {opp.deadline || 'Rolling'}
+                    </span>
+                    <div className="flex gap-2">
+                      <i className="fa-brands fa-linkedin text-slate-300 hover:text-blue-600 cursor-pointer text-xs"></i>
+                      <i className="fa-brands fa-x-twitter text-slate-300 hover:text-slate-900 cursor-pointer text-xs"></i>
+                    </div>
                   </div>
                 </div>
               </div>
             );
           }) : (
             <div className="col-span-full py-32 text-center bg-white border border-slate-200 rounded-[3rem] shadow-sm">
-               <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-100 text-slate-200">
-                  <i className="fa-solid fa-satellite text-3xl"></i>
-               </div>
-               <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Index Synchronization Failed</h3>
-               <p className="text-slate-400 mt-3 max-w-sm mx-auto text-[11px] font-medium leading-relaxed">The grounding agent could not find deterministic matches. Adjust your career horizon and deep-scan again.</p>
-               <button 
-                onClick={() => {setFilter('ALL'); setSearchQuery(''); load(true);}}
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-100 text-slate-200">
+                <i className="fa-solid fa-satellite text-3xl"></i>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Index Synchronization Failed</h3>
+              <p className="text-slate-400 mt-3 max-w-sm mx-auto text-[11px] font-medium leading-relaxed">The grounding agent could not find deterministic matches. Adjust your career horizon and deep-scan again.</p>
+              <button
+                onClick={() => { setFilter('ALL'); setSearchQuery(''); load(true); }}
                 className="mt-10 px-10 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/20"
-               >
-                 Execute Deep Signal Scan
-               </button>
+              >
+                Execute Deep Signal Scan
+              </button>
             </div>
           )}
         </div>
