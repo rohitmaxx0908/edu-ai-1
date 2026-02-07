@@ -51,6 +51,11 @@ const App: React.FC = () => {
     fetchData();
   }, [user]);
 
+  // Scroll to top when switching views (crucial for mobile)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [viewMode]);
+
   const handleAssessment = async (data: UserProfile) => {
     setLoading(true);
     setError(null);
@@ -194,8 +199,8 @@ const App: React.FC = () => {
                   key={mode}
                   onClick={() => setViewMode(mode as ViewMode)}
                   className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap border ${viewMode === mode
-                      ? 'bg-white text-indigo-600 border-indigo-100 shadow-sm'
-                      : 'bg-white/50 text-slate-500 border-transparent hover:bg-white hover:text-slate-900'
+                    ? 'bg-white text-indigo-600 border-indigo-100 shadow-sm'
+                    : 'bg-white/50 text-slate-500 border-transparent hover:bg-white hover:text-slate-900'
                     }`}
                 >
                   {mode === 'dashboard' ? 'Audit' : mode}
@@ -246,11 +251,11 @@ const App: React.FC = () => {
         ) : viewMode === 'academics' ? (
           <Academics profile={profile!} assessment={assessment} onUpdateProfile={handleUpdateProfile} />
         ) : viewMode === 'mentor' ? (
-          <div className="h-[calc(100vh-64px)] overflow-hidden">
+          <div className="h-[calc(100vh-120px)] md:h-[calc(100vh-64px)] overflow-hidden">
             <ChatMentor profile={profile!} assessment={assessment} />
           </div>
         ) : viewMode === 'news' ? (
-          <div className="h-[calc(100vh-64px)] overflow-hidden">
+          <div className="h-[calc(100vh-120px)] md:h-[calc(100vh-64px)] overflow-hidden">
             <NewsHub careerTarget={profile!.careerTarget.desiredRole} />
           </div>
 
