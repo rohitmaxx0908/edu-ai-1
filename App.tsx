@@ -4,23 +4,39 @@ import { UserProfile, AssessmentResult } from './types';
 import { INITIAL_PROFILE } from './constants';
 import { assessCareer } from './api/backend';
 import { dbService } from './services/dbService';
+import { auth, onAuthStateChanged, signOut, User } from './services/firebase';
 import ProfileForm from './components/ProfileForm';
 import Dashboard from './components/Dashboard';
 import ChatMentor from './components/ChatMentor';
 import SocialHub from './components/SocialHub';
 import Academics from './components/Academics';
 import NewsHub from './components/NewsHub';
+import ChatRoom from './components/ChatRoom';
+import Auth from './components/Auth';
 
-type ViewMode = 'dashboard' | 'mentor' | 'social' | 'academics' | 'news';
+type ViewMode = 'dashboard' | 'mentor' | 'social' | 'academics' | 'news' | 'discuss';
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
-  const [loading, setLoading] = useState(true); // Start loading true
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser: User | null) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Only fetch data if we have a user
     const fetchData = async () => {
       try {
         const { profile, assessment } = await dbService.getUserData();
@@ -33,20 +49,19 @@ const App: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleAssessment = async (data: UserProfile) => {
     setLoading(true);
     setError(null);
     try {
-      // First save the profile to DB (non-blocking if storage unavailable)
       try {
         await dbService.saveProfile(data);
       } catch (saveErr) {
         console.warn("Profile save failed, continuing:", saveErr);
       }
 
-      setProfile(data); // Optimistically set profile so we can render dashboard immediately upon success/fallback
+      setProfile(data);
 
       const result = await assessCareer(data);
       if (!result || !result.learning_roadmap) {
@@ -54,23 +69,17 @@ const App: React.FC = () => {
       }
 
       setAssessment(result);
-
-      // Save assessment to DB
       await dbService.saveAssessment(result);
 
     } catch (err: any) {
       console.error("Critical AI Error:", err);
-
-      // FALLBACK STRATEGY: If Real AI fails, switch to Simulation (Mock)
       console.warn("Switching to Twin Simulation Protocol due to uplink failure.");
 
       try {
-        // Dynamic import to avoid circular dependency issues if any
         const { getMockAssessment } = await import('./services/geminiService');
         const mockResult = await getMockAssessment();
 
         setAssessment(mockResult);
-        // Try saving to DB, but don't crash if that fails too
         try { await dbService.saveAssessment(mockResult); } catch (e) { console.error("DB Save failed", e); }
 
         setError(null);
@@ -98,10 +107,30 @@ const App: React.FC = () => {
       setProfile(null);
       setViewMode('dashboard');
       setError(null);
-      // Optional: Clear DB or just local state? For now just local state to allow re-assessment.
-      // If we wanted to clear DB: await dbService.clearData();
     }
   };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      setProfile(null);
+      setAssessment(null);
+    } catch (error) {
+      console.error("Error signing out", error);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-slate-700 border-t-indigo-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -117,12 +146,12 @@ const App: React.FC = () => {
               </div>
 
               {assessment && (
-                <div className="hidden md:flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                  {['dashboard', 'academics', 'mentor', 'social', 'news'].map((mode) => (
+                <div className="hidden md:flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200 overflow-x-auto">
+                  {['dashboard', 'academics', 'mentor', 'social', 'news', 'discuss'].map((mode) => (
                     <button
                       key={mode}
                       onClick={() => setViewMode(mode as ViewMode)}
-                      className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                      className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all whitespace-nowrap ${viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
                         }`}
                     >
                       {mode === 'dashboard' ? 'Audit' : mode}
@@ -133,15 +162,25 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              {assessment && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+              {assessment ? (
+                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100 hidden sm:flex">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   <span className="text-[10px] font-black text-emerald-700 uppercase">Live</span>
                 </div>
+              ) : null}
+
+              <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                <span className="text-[10px] font-bold text-slate-500 hidden sm:block truncate max-w-[100px]">{user.email}</span>
+                <button onClick={handleSignOut} title="Sign Out" className="text-slate-400 hover:text-red-600 text-xs font-bold transition-colors">
+                  <i className="fa-solid fa-power-off"></i>
+                </button>
+              </div>
+
+              {assessment && (
+                <button onClick={resetAssessment} title="Reset" className="text-slate-400 hover:text-slate-900 text-xs font-bold transition-colors">
+                  <i className="fa-solid fa-rotate"></i>
+                </button>
               )}
-              <button onClick={resetAssessment} title="Reset" className="text-slate-400 hover:text-slate-900 text-xs font-bold transition-colors">
-                <i className="fa-solid fa-rotate"></i>
-              </button>
             </div>
           </div>
         </div>
@@ -195,6 +234,8 @@ const App: React.FC = () => {
             <NewsHub careerTarget={profile!.careerTarget.desiredRole} />
           </div>
 
+        ) : viewMode === 'discuss' ? (
+          <ChatRoom />
         ) : (
           <SocialHub profile={profile!} />
         )

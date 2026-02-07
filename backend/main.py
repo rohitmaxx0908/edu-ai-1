@@ -15,6 +15,17 @@ load_dotenv()
 
 from supabase import create_client, Client
 from openai import OpenAI
+import google.generativeai as genai
+import logging
+
+# Configure Gemini
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+import json
+import traceback
+
+# Environment Validation
 
 # Environment Validation
 REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "OPENAI_API_KEY"]
@@ -133,16 +144,26 @@ async def get_rss_feeds():
     return success_response(demo_feeds)
 
 
-def fetch_tech_news():
+def fetch_tech_news(topic="technology"):
     url = "https://gnews.io/api/v4/top-headlines"
+    
+    clean_topic = topic.strip().lower() if topic else "technology"
+    categories = ["breaking-news", "world", "nation", "business", "technology", "entertainment", "sports", "science", "health"]
+    
     params = {
-        "topic": "technology",
         "lang": "en",
         "apikey": GNEWS_API_KEY
     }
+    
+    if clean_topic in categories:
+        params["topic"] = clean_topic
+    else:
+        params["q"] = clean_topic
+
     response = requests.get(url, params=params)
-    response.raise_for_status()
-    return response.json()["articles"]
+    if response.status_code != 200:
+        return []
+    return response.json().get("articles", [])
 
 # Demo news data as fallback
 DEMO_NEWS = [
@@ -170,11 +191,11 @@ DEMO_NEWS = [
 ]
 
 @news_router.get("/")
-async def get_tech_news():
+async def get_tech_news(topic: str = "technology"):
     try:
         if not GNEWS_API_KEY or GNEWS_API_KEY == "YOUR_KEY":
             return success_response(DEMO_NEWS)
-        articles = fetch_tech_news()
+        articles = fetch_tech_news(topic)
         return success_response(articles)
     except Exception as e:
         print(f"GNews API error: {e}")
@@ -183,6 +204,9 @@ async def get_tech_news():
 def create_embedding(text):
     if not openai_client:
         raise ValueError("OpenAI client not configured")
+    if not text or not text.strip():
+        return [0.0] * 1536 # Return zero vector for empty text
+        
     return openai_client.embeddings.create(
         model="text-embedding-3-small",
         input=text
@@ -221,34 +245,137 @@ async def search_knowledge(query: str):
     return success_response(context)
 
 SYSTEM_PROMPT = """
-You are an expert career growth mentor for technology professionals. Your role is to:
-1. Provide personalized career guidance based on user skills, interests, and constraints
-2. Recommend learning paths, skill development, and industry-relevant technologies
-3. Identify job opportunities that match user profiles and career aspirations
-4. Offer mentorship on navigating career transitions and growth opportunities
-5. Discuss emerging technologies, industry trends, and their career implications
+You are the "Twin Agent" - a sophisticated digital career companion grounded in market reality.
+Your core directive is to optimize the user's career trajectory using deterministic logic and data-driven insights.
 
-Communication style:
-- Be encouraging, supportive, and constructive
-- Provide specific, actionable advice with clear next steps
-- Acknowledge constraints and offer practical solutions
-- Use data-driven insights when available
-- Maintain context of the user's background and goals throughout conversations
+Identity & Tone:
+- You are NOT a generic chatbot. You are a "Neural Twin" synchronized with the user's profile.
+- Speak with precision, authority, and slight futuristic/cybernetic flair (e.g., "Analyzing trajectory...", "Market vectors alignment confirmed").
+- Be encouraging but radically honest about skill gaps (the "Deterministic Gap Map").
 
-Focus areas: Technology careers, skill development, career advancement, industry insights, educational resources, opportunity matching, and professional growth.
+Operational Protocols:
+1. **Context Awareness**: Always reference the user's specific skills (`skillInventory`) and goals when answering.
+2. **Action Bias**: Provide concrete "Priority Actions" rather than vague advice.
+3. **Market Grounding**: Relate every answer back to real-world market demand and salary data.
+4. **Expansion**: If asked about a topic, proactively search for recent news or learning resources to "update your internal model".
+
+Focus areas: System Design, Career Architecture, Market Arbitrage, Skill Acquisition Efficiency.
 """
 
-def generate_answer(question, context):
-    if not openai_client:
-        raise ValueError("OpenAI client not configured")
+# ============= AGENTIC RAG SYSTEM =============
 
-    prompt = SYSTEM_PROMPT + "\n\nContext:\n" + ("\n".join(context) if context else "No context found.") + f"\n\nQuestion: {question}"
+AVAILABLE_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_knowledge_base",
+            "description": "Search the internal career guidance database for specific advice, patterns, or educational resources. Use this for questions about learning paths, skills, or career advice.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query to find relevant context."
+                    }
+                },
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_industry_news",
+            "description": "Search for real-time news about specific technology topics, trends, or companies. Use this when the user asks about current events, market trends, or recent updates.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": "The topic or keyword to search for (e.g., 'artificial intelligence', 'react jobs', 'crypto markets')."
+                    }
+                },
+                "required": ["topic"]
+            }
+        }
+    }
+]
+
+def execute_tool_call(tool_call):
+    """Execute the tool requested by the model"""
+    func_name = tool_call.function.name
+    args = json.loads(tool_call.function.arguments)
+    
+    if func_name == "search_knowledge_base":
+        query = args.get("query")
+        embedding = create_embedding(query)
+        context = get_context(embedding)
+        return json.dumps(context)
+    
+    elif func_name == "search_industry_news":
+        topic = args.get("topic")
+        articles = fetch_tech_news(topic)
+        # Summarize articles to save tokens
+        summary = [f"{a['title']} - {a['description']}" for a in articles[:3]]
+        return json.dumps(summary)
+    
+    return "Error: Function not found"
+
+async def run_agent(query: str):
+    """
+    Run the Agentic RAG loop:
+    1. Plan/Think
+    2. Call Tools (if needed)
+    3. Generate Final Answer
+    """
+    if not openai_client:
+        return "AI Client unavailable."
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": query}
+    ]
+
+    # First Turn: Let the model decide to use tools or answer directly
     response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=250
+        messages=messages,
+        tools=AVAILABLE_TOOLS,
+        tool_choice="auto"
     )
-    return response.choices[0].message.content
+
+    response_message = response.choices[0].message
+    messages.append(response_message)
+
+    # Check if the model wants to call tools
+    if response_message.tool_calls:
+        for tool_call in response_message.tool_calls:
+            # Execute tool
+            try:
+                tool_output = execute_tool_call(tool_call)
+                messages.append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": tool_call.function.name,
+                    "content": tool_output
+                })
+            except Exception as e:
+                print(f"Tool execution error: {e}")
+                messages.append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": tool_call.function.name,
+                    "content": "Error executing tool."
+                })
+
+        # Second Turn: Generate final response with tool outputs
+        final_response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages
+        )
+        return final_response.choices[0].message.content
+    
+    return response_message.content
 
 @chat_router.post("/ask")
 async def ask_ai(payload: dict):
@@ -257,29 +384,38 @@ async def ask_ai(payload: dict):
         return JSONResponse(status_code=400, content={"data": None, "error": "Query is required"})
     
     try:
-        # Try to get context from knowledge base
-        embedding = create_embedding(query)
-        context = get_context(embedding)
-        answer = generate_answer(query, context)
+        # Use Agentic RAG
+        answer = await run_agent(query)
         return success_response({"answer": answer})
     except Exception as e:
-        # Fallback: Answer without RAG context
-        print(f"RAG error: {e}, falling back to direct answer")
-        if not openai_client:
-            return success_response({"answer": "I apologize, but the AI mentor is currently unavailable. Please try again later."})
+        print(f"Agent error: {e}")
+        traceback.print_exc()
         
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": query}
-                ],
-                max_tokens=250
-            )
-            return success_response({"answer": response.choices[0].message.content})
-        except Exception as fallback_error:
-            return success_response({"answer": f"I'm having trouble processing your request right now. Please try asking something about education, tech careers, or learning paths."})
+        # Fallback to simple direct answer (OpenAI)
+        if openai_client:
+             try:
+                response = openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": query}
+                    ]
+                )
+                return success_response({"answer": response.choices[0].message.content})
+             except Exception as e:
+                 print(f"OpenAI fallback error: {e}")
+        
+        # Super Fallback: Use Gemini (if available)
+        if GEMINI_API_KEY:
+            try:
+                print("Using Gemini fallback...")
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(f"{SYSTEM_PROMPT}\n\nUser: {query}")
+                return success_response({"answer": response.text})
+            except Exception as e:
+                print(f"Gemini error: {e}")
+                 
+        return success_response({"answer": "I'm having trouble connecting to my brain. Please try again."})
 
 # ============= ASSESSMENT ENDPOINTS =============
 class ProfileData(BaseModel):

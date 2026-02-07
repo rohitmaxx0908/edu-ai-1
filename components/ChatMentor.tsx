@@ -48,14 +48,16 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
 
     try {
       // Build context string from user profile and assessment
+      // Build context string from user profile and assessment
       const context = `
 User Profile Context:
-- Current Role: ${profile.currentRole || 'Not specified'}
-- Target Role: ${profile.targetRole || 'Not specified'}
-- Skills: ${profile.skills?.join(', ') || 'Not specified'}
-- Experience Level: ${assessment?.experienceLevel || 'Not specified'}
-- Career Goals: ${profile.careerGoals || 'Not specified'}
-- Learning Preferences: ${profile.learningStyle || 'Not specified'}
+- Name: ${profile.personalContext.name || 'User'}
+- Education: ${profile.personalContext.educationLevel} in ${profile.personalContext.fieldOfStudy}
+- Target Role: ${profile.careerTarget.desiredRole || 'Not specified'}
+- Target Industry: ${profile.careerTarget.targetIndustry || 'Not specified'}
+- Top Skills: ${Object.entries(profile.skillInventory).filter(([_, v]) => v > 5).map(([k, _]) => k).join(', ') || 'None prominent'}
+- Current Level: ${assessment?.level || 'Analyzing'}
+- Identified Gaps: ${assessment?.identified_gaps?.map(g => g.title).join(', ') || 'None'}
 
 User Query: ${msgToSend}`;
 

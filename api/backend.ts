@@ -144,8 +144,8 @@ export async function getUserData(): Promise<{ profile: any; assessment: any }> 
 /**
  * Fetch tech news
  */
-export async function fetchNews(): Promise<any[]> {
-  const res = await fetch(`${BACKEND_URL}/news/`);
+export async function fetchNews(topic: string = "technology"): Promise<any[]> {
+  const res = await fetch(`${BACKEND_URL}/news/?topic=${encodeURIComponent(topic)}`);
 
   if (!res.ok) {
     return []; // Silent fail for news

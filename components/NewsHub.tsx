@@ -27,19 +27,28 @@ const NewsHub: React.FC<NewsHubProps> = ({ careerTarget = 'Technology' }) => {
   const [activeTab, setActiveTab] = useState<'articles' | 'headlines'>('articles');
   const hasLoaded = useRef(false);
 
+  const [selectedTopic, setSelectedTopic] = useState('technology');
+
+  const TOPICS = [
+    { id: 'technology', label: 'Tech General', icon: 'fa-microchip' },
+    { id: 'software engineering', label: 'Software Eng', icon: 'fa-code' },
+    { id: 'artificial intelligence', label: 'AI & ML', icon: 'fa-brain' },
+    { id: 'tech courses', label: 'Courses', icon: 'fa-graduation-cap' }
+  ];
+
   const loadNews = async (isRetry = false) => {
-    if (loading || (hasLoaded.current && !isRetry)) return;
+    if (loading || (hasLoaded.current && !isRetry && selectedTopic === 'technology')) return;
     setLoading(true);
     setError(null);
     try {
-      const [newsData, headlineData] = await Promise.all([
-        fetchNews(),
-        fetchRssFeeds()
-      ]);
-      
+      // Fetch news for the selected topic
+      const newsData = await fetchNews(selectedTopic);
+      // Always fetch headlines (RSS) as they are general tech
+      const headlineData = await fetchRssFeeds();
+
       setArticles(newsData || []);
       setHeadlines(headlineData || []);
-      
+
       if (newsData && newsData.length > 0) {
         setSelectedArticle(newsData[0]);
       }
@@ -47,7 +56,7 @@ const NewsHub: React.FC<NewsHubProps> = ({ careerTarget = 'Technology' }) => {
     } catch (err: any) {
       console.error("News Hub Error:", err);
       setError("Failed to load news updates. Check your connection.");
-      
+      // ... fallback logic (kept same but could be improved) ...
       // Fallback demo news
       const fallbackNews = [
         {
@@ -77,15 +86,15 @@ const NewsHub: React.FC<NewsHubProps> = ({ careerTarget = 'Technology' }) => {
   };
 
   useEffect(() => {
-    loadNews();
-  }, []);
+    loadNews(true); // Always reload on topic change
+  }, [selectedTopic]);
 
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-8 py-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
                 <i className="fa-solid fa-newspaper text-white text-lg"></i>
@@ -95,15 +104,36 @@ const NewsHub: React.FC<NewsHubProps> = ({ careerTarget = 'Technology' }) => {
                 <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Industry Pulse & Insights</p>
               </div>
             </div>
+
+            <button
+              onClick={() => loadNews(true)}
+              disabled={loading}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-md hover:shadow-lg"
+            >
+              <i className="fa-solid fa-rotate-right mr-2" style={{ opacity: loading ? 0.5 : 1 }}></i>
+              Refresh
+            </button>
           </div>
-          <button
-            onClick={() => loadNews(true)}
-            disabled={loading}
-            className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-md hover:shadow-lg"
-          >
-            <i className="fa-solid fa-rotate-right mr-2" style={{ opacity: loading ? 0.5 : 1 }}></i>
-            Refresh
-          </button>
+
+          {/* Topics Selector */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {TOPICS.map((topic) => (
+              <button
+                key={topic.id}
+                onClick={() => {
+                  setSelectedTopic(topic.id);
+                  setActiveTab('articles');
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${selectedTopic === topic.id
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-105'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                  }`}
+              >
+                <i className={`fa-solid ${topic.icon}`}></i>
+                {topic.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -113,13 +143,12 @@ const NewsHub: React.FC<NewsHubProps> = ({ careerTarget = 'Technology' }) => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-4 border-b-2 font-bold text-[11px] uppercase tracking-widest transition-all ${
-              activeTab === tab
+            className={`px-4 py-4 border-b-2 font-bold text-[11px] uppercase tracking-widest transition-all ${activeTab === tab
                 ? 'border-indigo-600 text-indigo-600'
                 : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
-            {tab === 'articles' ? '📰 Latest Articles' : '📢 News Headlines'}
+            {tab === 'articles' ? `📰 ${TOPICS.find(t => t.id === selectedTopic)?.label} Articles` : '📢 Global Headlines'}
           </button>
         ))}
       </div>
@@ -152,11 +181,10 @@ const NewsHub: React.FC<NewsHubProps> = ({ careerTarget = 'Technology' }) => {
                     <button
                       key={idx}
                       onClick={() => setSelectedArticle(article)}
-                      className={`w-full text-left p-4 border-b border-slate-100 transition-all ${
-                        selectedArticle?.title === article.title
+                      className={`w-full text-left p-4 border-b border-slate-100 transition-all ${selectedArticle?.title === article.title
                           ? 'bg-indigo-50 border-l-4 border-l-indigo-600'
                           : 'hover:bg-slate-50/50'
-                      }`}
+                        }`}
                     >
                       <div className="space-y-2">
                         <h3 className="font-bold text-[11px] text-slate-900 line-clamp-2 leading-tight">

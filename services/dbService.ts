@@ -5,78 +5,76 @@ const IS_MOCK_MODE = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 export const dbService = {
-    async saveProfile(profile: UserProfile): Promise<void> {
-        if (IS_MOCK_MODE) {
-            console.log('MOCK DB: Saving profile', profile);
-            localStorage.setItem('enhance_ai_profile', JSON.stringify(profile));
-            return;
-        }
-
-        try {
-            const response = await fetch(`${BACKEND_URL}/profile/save`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ profile })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save profile');
-            }
-        } catch (err) {
-            console.error('Backend save failed (falling back to local):', err);
-            localStorage.setItem('enhance_ai_profile', JSON.stringify(profile));
-        }
-    },
-
-    async saveAssessment(assessment: AssessmentResult): Promise<void> {
-        if (IS_MOCK_MODE) {
-            console.log('MOCK DB: Saving assessment', assessment);
-            localStorage.setItem('enhance_ai_assessment', JSON.stringify(assessment));
-            return;
-        }
-
-        try {
-            const response = await fetch(`${BACKEND_URL}/profile/save-assessment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ assessment })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save assessment');
-            }
-        } catch (err) {
-            console.error('Error saving assessment:', err);
-            throw err;
-        }
-    },
-
     async getUserData(): Promise<{ profile: UserProfile | null, assessment: AssessmentResult | null }> {
+        // 1. Try LocalStorage first (fastest)
+        const localProfile = localStorage.getItem('enhance_ai_profile');
+        const localAssessment = localStorage.getItem('enhance_ai_assessment');
+
+        let profile = localProfile ? JSON.parse(localProfile) : null;
+        let assessment = localAssessment ? JSON.parse(localAssessment) : null;
+
         if (IS_MOCK_MODE) {
-            console.log('MOCK DB: Fetching user data');
-            const p = localStorage.getItem('enhance_ai_profile');
-            const a = localStorage.getItem('enhance_ai_assessment');
-            return {
-                profile: p ? JSON.parse(p) : null,
-                assessment: a ? JSON.parse(a) : null
-            };
+            return { profile, assessment };
         }
 
+        // 2. Try Backend Sync (to get fresher data)
         try {
             const response = await fetch(`${BACKEND_URL}/profile/data`);
-            
-            if (!response.ok) {
-                return { profile: null, assessment: null };
-            }
+            if (response.ok) {
+                const result = await response.json();
+                const remoteProfile = result.data?.profile;
+                const remoteAssessment = result.data?.assessment;
 
-            const result = await response.json();
-            return {
-                profile: result.data?.profile || null,
-                assessment: result.data?.assessment || null
-            };
+                // If backend has data, prefer it over local (or merge)
+                if (remoteProfile) {
+                    profile = remoteProfile;
+                    // Update local cache
+                    localStorage.setItem('enhance_ai_profile', JSON.stringify(remoteProfile));
+                }
+                if (remoteAssessment) {
+                    assessment = remoteAssessment;
+                    // Update local cache
+                    localStorage.setItem('enhance_ai_assessment', JSON.stringify(remoteAssessment));
+                }
+            }
         } catch (error) {
-            console.error('Error fetching data:', error);
-            return { profile: null, assessment: null };
+            console.warn('Backend sync failed, using local data:', error);
+        }
+
+        return { profile, assessment };
+    },
+
+    async saveProfile(data: UserProfile): Promise<void> {
+        // Always save to local storage immediately
+        localStorage.setItem('enhance_ai_profile', JSON.stringify(data));
+
+        if (IS_MOCK_MODE) return;
+
+        try {
+            await fetch(`${BACKEND_URL}/profile/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile: data })
+            });
+        } catch (err) {
+            console.error('Background save failed:', err);
+        }
+    },
+
+    async saveAssessment(data: AssessmentResult): Promise<void> {
+        // Always save to local storage immediately
+        localStorage.setItem('enhance_ai_assessment', JSON.stringify(data));
+
+        if (IS_MOCK_MODE) return;
+
+        try {
+            await fetch(`${BACKEND_URL}/profile/save-assessment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assessment: data })
+            });
+        } catch (err) {
+            console.error('Background save failed:', err);
         }
     }
 };
