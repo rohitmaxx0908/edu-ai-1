@@ -63,7 +63,7 @@ const Auth: React.FC = () => {
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[100px] -mr-32 -mt-32 animate-pulse"></div>
             <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-600/10 rounded-full blur-[80px] -ml-32 -mb-32"></div>
 
-            <div className="w-full max-w-md p-8 relative z-10 animate-in fade-in zoom-in duration-500">
+            <div className="w-full max-w-md p-4 md:p-8 relative z-10 animate-in fade-in zoom-in duration-500">
                 {/* Card */}
                 <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl overflow-hidden relative">
 

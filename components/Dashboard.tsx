@@ -93,7 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
 
           {/* 2. RISK & PERFORMANCE METRICS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="bg-white p-4 md:p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <i className="fa-solid fa-shield-halved text-amber-500"></i>
@@ -125,7 +125,7 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
           </div>
 
           {/* 3. SKILL DISTRIBUTION CHART (Bar Chart for better clarity) */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
@@ -150,7 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({ assessment, profile, onReset }) =
                     fill="#8884d8"
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }: { name?: string; percent?: number }) => `${name || ''} ${((percent || 0) * 100).toFixed(0)}%`}
                   >
                     {skillData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={SKILL_COLORS[index % SKILL_COLORS.length]} />

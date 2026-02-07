@@ -42,15 +42,15 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
 
   const isStepValid = (): boolean => {
     switch (step) {
-      case 1: 
+      case 1:
         return !!(
-          formData.personalContext?.name?.trim() && 
-          formData.personalContext?.institutionName?.trim() && 
+          formData.personalContext?.name?.trim() &&
+          formData.personalContext?.institutionName?.trim() &&
           formData.personalContext?.fieldOfStudy?.trim()
         );
-      case 2: 
+      case 2:
         return !!(
-          formData.careerTarget?.desiredRole?.trim() && 
+          formData.careerTarget?.desiredRole?.trim() &&
           (formData.careerTarget?.targetTimeline || 0) > 0
         );
       case 3:
@@ -58,21 +58,21 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
           (formData.timeConsistency?.hoursPerDay || 0) > 0 &&
           (formData.timeConsistency?.daysPerWeek || 0) > 0
         );
-      default: 
+      default:
         return true;
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8 border border-slate-200">
+    <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-4 md:p-8 border border-slate-200">
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-slate-800">Agent Decision Setup</h2>
           <span className="text-sm font-medium text-slate-500">Analysis Data Point {step} / {totalSteps}</span>
         </div>
         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-          <div 
-            className="bg-indigo-600 h-full transition-all duration-300" 
+          <div
+            className="bg-indigo-600 h-full transition-all duration-300"
             style={{ width: `${(step / totalSteps) * 100}%` }}
           />
         </div>
@@ -85,7 +85,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-slate-600 mb-1">Full Name</label>
-                <input 
+                <input
                   type="text" placeholder="John Doe"
                   className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   value={formData.personalContext.name || ''}
@@ -94,7 +94,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-slate-600 mb-1">Institution / University</label>
-                <input 
+                <input
                   type="text" placeholder="e.g. Stanford University"
                   className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   value={formData.personalContext.institutionName || ''}
@@ -103,7 +103,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Current GPA / Grade</label>
-                <input 
+                <input
                   type="text" placeholder="e.g. 3.8 or 8.5"
                   className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   value={formData.personalContext.currentGPA || ''}
@@ -112,7 +112,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Field of Study</label>
-                <input 
+                <input
                   type="text" placeholder="e.g. Computer Science"
                   className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   value={formData.personalContext.fieldOfStudy || ''}
@@ -123,7 +123,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
                 <label className="block text-sm font-medium text-slate-600 mb-1">GitHub Username</label>
                 <div className="relative">
                   <i className="fa-brands fa-github absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                  <input 
+                  <input
                     type="text" placeholder="username"
                     className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                     value={formData.personalContext.githubUsername || ''}
@@ -135,7 +135,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
                 <label className="block text-sm font-medium text-slate-600 mb-1">LinkedIn Profile URL</label>
                 <div className="relative">
                   <i className="fa-brands fa-linkedin absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                  <input 
+                  <input
                     type="text" placeholder="linkedin.com/in/..."
                     className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                     value={formData.personalContext.linkedinUrl || ''}
@@ -153,7 +153,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-slate-600 mb-1">Desired Role</label>
-                <input 
+                <input
                   type="text" placeholder="e.g. Backend Developer"
                   className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   value={formData.careerTarget.desiredRole || ''}
@@ -162,8 +162,8 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Timeline (Months)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   value={formData.careerTarget.targetTimeline}
                   onChange={e => handleInputChange('careerTarget', 'targetTimeline', parseInt(e.target.value) || 0)}
@@ -179,8 +179,8 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Hours / Day</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   value={formData.timeConsistency.hoursPerDay}
                   onChange={e => handleInputChange('timeConsistency', 'hoursPerDay', parseInt(e.target.value) || 0)}
@@ -188,7 +188,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Days / Week</label>
-                <input 
+                <input
                   type="number" max="7"
                   className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
                   value={formData.timeConsistency.daysPerWeek}
@@ -209,8 +209,8 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
                     <span>{label}</span>
                     <span className="text-indigo-600">{(formData.skillInventory as any)[key]} / 5</span>
                   </div>
-                  <input 
-                    type="range" min="0" max="5" 
+                  <input
+                    type="range" min="0" max="5"
                     className="w-full accent-indigo-600"
                     value={(formData.skillInventory as any)[key]}
                     onChange={e => handleInputChange('skillInventory', key, parseInt(e.target.value))}
@@ -228,7 +228,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               <div className="col-span-full font-bold text-slate-500 text-xs uppercase">Problem Difficulty Breakdown</div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Easy</label>
-                <input 
+                <input
                   type="number" className="w-full p-2 border border-slate-300 rounded-lg"
                   value={formData.practiceOutput.problemDifficulty.easy}
                   onChange={e => handleNestedChange('practiceOutput', 'problemDifficulty', 'easy', parseInt(e.target.value) || 0)}
@@ -236,7 +236,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Medium</label>
-                <input 
+                <input
                   type="number" className="w-full p-2 border border-slate-300 rounded-lg"
                   value={formData.practiceOutput.problemDifficulty.medium}
                   onChange={e => handleNestedChange('practiceOutput', 'problemDifficulty', 'medium', parseInt(e.target.value) || 0)}
@@ -244,7 +244,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Hard</label>
-                <input 
+                <input
                   type="number" className="w-full p-2 border border-slate-300 rounded-lg"
                   value={formData.practiceOutput.problemDifficulty.hard}
                   onChange={e => handleNestedChange('practiceOutput', 'problemDifficulty', 'hard', parseInt(e.target.value) || 0)}
@@ -253,9 +253,9 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-               <div>
+              <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Independent Projects</label>
-                <input 
+                <input
                   type="number" className="w-full p-3 border border-slate-300 rounded-lg"
                   value={formData.practiceOutput.projects.independent}
                   onChange={e => handleNestedChange('practiceOutput', 'projects', 'independent', parseInt(e.target.value) || 0)}
@@ -263,7 +263,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Guided Projects</label>
-                <input 
+                <input
                   type="number" className="w-full p-3 border border-slate-300 rounded-lg"
                   value={formData.practiceOutput.projects.guided}
                   onChange={e => handleNestedChange('practiceOutput', 'projects', 'guided', parseInt(e.target.value) || 0)}
@@ -274,7 +274,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">GitHub Commits (Last 30d)</label>
-                <input 
+                <input
                   type="number" className="w-full p-3 border border-slate-300 rounded-lg"
                   value={formData.practiceOutput.commitsLast30Days}
                   onChange={e => handleInputChange('practiceOutput', 'commitsLast30Days', parseInt(e.target.value) || 0)}
@@ -282,7 +282,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Last Active (Days Ago)</label>
-                <input 
+                <input
                   type="number" className="w-full p-3 border border-slate-300 rounded-lg"
                   value={formData.practiceOutput.lastActiveDaysAgo}
                   onChange={e => handleInputChange('practiceOutput', 'lastActiveDaysAgo', parseInt(e.target.value) || 0)}
@@ -290,7 +290,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <input 
+              <input
                 type="checkbox" id="gh"
                 checked={formData.practiceOutput.githubActivity}
                 onChange={e => handleInputChange('practiceOutput', 'githubActivity', e.target.checked)}
@@ -306,7 +306,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Courses Completed</label>
-                <input 
+                <input
                   type="number" className="w-full p-3 border border-slate-300 rounded-lg"
                   value={formData.learningSources.coursesCompleted}
                   onChange={e => handleInputChange('learningSources', 'coursesCompleted', parseInt(e.target.value) || 0)}
@@ -314,7 +314,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Courses In Progress</label>
-                <input 
+                <input
                   type="number" className="w-full p-3 border border-slate-300 rounded-lg"
                   value={formData.learningSources.coursesInProgress}
                   onChange={e => handleInputChange('learningSources', 'coursesInProgress', parseInt(e.target.value) || 0)}
@@ -345,9 +345,9 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
         ) : (
           <button
             onClick={() => {
-              const total = formData.practiceOutput.problemDifficulty.easy + 
-                            formData.practiceOutput.problemDifficulty.medium + 
-                            formData.practiceOutput.problemDifficulty.hard;
+              const total = formData.practiceOutput.problemDifficulty.easy +
+                formData.practiceOutput.problemDifficulty.medium +
+                formData.practiceOutput.problemDifficulty.hard;
               const updated = { ...formData, practiceOutput: { ...formData.practiceOutput, problemsSolved: total } };
               onSubmit(updated);
             }}

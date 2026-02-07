@@ -184,6 +184,26 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {assessment && (
+          <div className="md:hidden border-t border-slate-100 bg-slate-50 overflow-x-auto no-scrollbar">
+            <div className="flex px-4 py-2 gap-2 min-w-max">
+              {['dashboard', 'academics', 'mentor', 'social', 'news', 'discuss'].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode as ViewMode)}
+                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap border ${viewMode === mode
+                      ? 'bg-white text-indigo-600 border-indigo-100 shadow-sm'
+                      : 'bg-white/50 text-slate-500 border-transparent hover:bg-white hover:text-slate-900'
+                    }`}
+                >
+                  {mode === 'dashboard' ? 'Audit' : mode}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
       <main className={`flex-1 ${viewMode === 'mentor' ? 'p-0' : 'py-8 px-4 sm:px-6 lg:px-8'}`}>

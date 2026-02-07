@@ -22,6 +22,7 @@ import logging
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+    GEMINI_MODEL = "gemini-1.5-flash" # Use stable flash model
 import json
 import traceback
 
