@@ -27,7 +27,7 @@ export interface NewsArticle {
  * Ask AI with RAG context
  */
 export async function askAI(question: string): Promise<{ answer: string }> {
-  const res = await fetch(`${BACKEND_URL}/rag/ask`, {
+  const res = await fetch(`${BACKEND_URL}/chat/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query: question }),
@@ -38,7 +38,7 @@ export async function askAI(question: string): Promise<{ answer: string }> {
   }
 
   const result: ApiResponse<{ answer: string }> = await res.json();
-  
+
   if (result.error) {
     throw new Error(result.error);
   }
@@ -61,7 +61,7 @@ export async function assessCareer(profile: any): Promise<any> {
   }
 
   const result: ApiResponse<any> = await res.json();
-  
+
   if (result.error) {
     throw new Error(result.error);
   }
@@ -84,7 +84,7 @@ export async function fetchOpportunities(profile: any): Promise<any[]> {
   }
 
   const result: ApiResponse<any[]> = await res.json();
-  
+
   if (result.error) {
     throw new Error(result.error);
   }
@@ -133,7 +133,7 @@ export async function getUserData(): Promise<{ profile: any; assessment: any }> 
   }
 
   const result: ApiResponse<{ profile: any; assessment: any }> = await res.json();
-  
+
   if (result.error) {
     throw new Error(result.error);
   }
@@ -169,26 +169,5 @@ export async function fetchRssFeeds(): Promise<string[]> {
   return result.data || [];
 }
 
-/**
- * Analyze user twin (profile)
- */
-export async function analyzeUserTwin(userTwin: any): Promise<any> {
-  const res = await fetch(`${BACKEND_URL}/analyze-user`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userTwin),
-  });
 
-  if (!res.ok) {
-    throw new Error("Failed to analyze user");
-  }
-
-  const result: ApiResponse<any> = await res.json();
-  
-  if (result.error) {
-    throw new Error(result.error);
-  }
-
-  return result.data;
-}
 

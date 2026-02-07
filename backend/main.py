@@ -9,6 +9,7 @@ import requests
 import feedparser
 from dotenv import load_dotenv
 import json
+from datetime import datetime
 
 load_dotenv()
 
@@ -65,7 +66,26 @@ async def root():
 
 @core_router.get("/health")
 async def health():
-    return success_response("healthy")
+    status = {
+        "api": "online",
+        "supabase": "unknown",
+        "openai": "unknown"
+    }
+    
+    # Check Supabase
+    try:
+        supabase.table("user_data").select("count", count="exact").limit(1).execute()
+        status["supabase"] = "connected"
+    except Exception as e:
+        status["supabase"] = f"error: {str(e)}"
+        
+    # Check OpenAI
+    if openai_client:
+        status["openai"] = "configured"
+    else:
+        status["openai"] = "missing_key"
+        
+    return success_response(status)
 
 TECH_FEEDS = [
     "https://techcrunch.com/feed/",
@@ -230,7 +250,7 @@ def generate_answer(question, context):
     )
     return response.choices[0].message.content
 
-@rag_router.post("/ask")
+@chat_router.post("/ask")
 async def ask_ai(payload: dict):
     query = payload.get("query")
     if not query:
@@ -331,9 +351,10 @@ async def assess_career_profile(profile: ProfileData):
     try:
         profile_dict = profile.dict()
         
-        system_prompt = """You are a career assessment AI. Analyze the user's profile and provide a structured assessment.
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        system_prompt = f"""You are a career assessment AI. Analyze the user's profile and provide a structured assessment.
 
-Current Date: 2026-01-29
+Current Date: {current_date}
 
 Return ONLY valid JSON matching this schema:
 {

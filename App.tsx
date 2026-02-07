@@ -189,15 +189,17 @@ const App: React.FC = () => {
         ) : viewMode === 'mentor' ? (
           <div className="h-[calc(100vh-64px)] overflow-hidden">
             <ChatMentor profile={profile!} assessment={assessment} />
-                  ) : viewMode === 'news' ? (
-                    <div className="h-[calc(100vh-64px)] overflow-hidden">
-                      <NewsHub careerTarget={profile!.careerTarget.desiredRole} />
-                    </div>
           </div>
+        ) : viewMode === 'news' ? (
+          <div className="h-[calc(100vh-64px)] overflow-hidden">
+            <NewsHub careerTarget={profile!.careerTarget.desiredRole} />
+          </div>
+
         ) : (
           <SocialHub profile={profile!} />
-        )}
-      </main>
+        )
+        }
+      </main >
 
       {(!assessment || viewMode !== 'mentor') && (
         <footer className="py-8 border-t border-slate-200 bg-white">
@@ -208,7 +210,7 @@ const App: React.FC = () => {
           </div>
         </footer>
       )}
-    </div>
+    </div >
   );
 };
 
