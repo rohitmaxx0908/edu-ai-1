@@ -25,6 +25,23 @@ const ChatRoom: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [showStickers, setShowStickers] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => setActiveMenuId(null);
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    const copyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setActiveMenuId(null);
+        } catch (err) {
+            console.error('Failed to copy', err);
+        }
+    };
 
     useEffect(() => {
         const q = query(collection(db, 'chat_messages'), orderBy('createdAt'));
@@ -180,6 +197,8 @@ const ChatRoom: React.FC = () => {
                                     </span>
                                 </div>
                                 <div>
+
+
                                     <div className={`flex items-baseline gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}`}>
                                         <span className="text-[10px] font-bold text-slate-500">{msg.displayName}</span>
                                         {msg.createdAt && (
@@ -187,19 +206,48 @@ const ChatRoom: React.FC = () => {
                                                 {msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         )}
-                                        {isMe && (
+
+                                        {/* Context Menu Trigger */}
+                                        <div className="relative">
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    deleteMessage(msg);
+                                                    setActiveMenuId(activeMenuId === msg.id ? null : msg.id);
                                                 }}
-                                                className="text-slate-300 hover:text-red-500 p-2 transition-colors"
-                                                title="Delete"
+                                                className={`text-slate-300 hover:text-indigo-500 p-1 transition-colors ${activeMenuId === msg.id ? 'text-indigo-500' : ''}`}
                                             >
-                                                <i className="fa-solid fa-trash text-xs"></i>
+                                                <i className="fa-solid fa-ellipsis-vertical text-[10px]"></i>
                                             </button>
-                                        )}
+
+                                            {/* Dropdown Menu */}
+                                            {activeMenuId === msg.id && (
+                                                <div className={`absolute top-full ${isMe ? 'right-0' : 'left-0'} mt-1 bg-white border border-slate-100 shadow-xl rounded-xl overflow-hidden z-50 min-w-[120px] animate-in fade-in zoom-in-95 duration-200`}>
+                                                    {msg.text && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                copyToClipboard(msg.text!);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                                                        >
+                                                            <i className="fa-regular fa-copy text-slate-400"></i> Copy
+                                                        </button>
+                                                    )}
+                                                    {isMe && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteMessage(msg);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-50"
+                                                        >
+                                                            <i className="fa-solid fa-trash text-red-500"></i> Delete
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {msg.type === 'text' && (
