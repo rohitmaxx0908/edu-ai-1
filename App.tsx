@@ -349,26 +349,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Floating Dock (Replaces Scrollbar) */}
-        {assessment && (
-          <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-auto max-w-[95%] z-[100]">
-            <div className="flex items-center gap-1 bg-slate-900/95 backdrop-blur-xl p-2 rounded-2xl border border-white/10 shadow-2xl shadow-slate-900/50 ring-1 ring-white/10 overflow-x-auto no-scrollbar">
-              {NAV_ITEMS.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setViewMode(item.id)}
-                  className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl shrink-0 transition-all duration-300 ${viewMode === item.id
-                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-110 -translate-y-2 ring-2 ring-white/20'
-                    : 'text-slate-400 hover:text-white hover:bg-white/10 active:scale-95'
-                    }`}
-                >
-                  <i className={`text-lg mb-0.5 fa-solid ${item.icon}`}></i>
-                  <span className="text-[8px] font-bold uppercase tracking-tighter scale-75 origin-top">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </nav>
 
       <UpdateModal
@@ -399,6 +379,27 @@ const App: React.FC = () => {
         </footer>
       )
       }
+
+      {/* Mobile Floating Dock (Moved to Root) */}
+      {assessment && (
+        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-auto max-w-[95%] z-[9999]">
+          <div className="flex items-center gap-1 bg-slate-900/95 backdrop-blur-xl p-2 rounded-2xl border border-white/10 shadow-2xl shadow-slate-900/50 ring-1 ring-white/10 overflow-x-auto no-scrollbar">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setViewMode(item.id)}
+                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl shrink-0 transition-all duration-300 ${viewMode === item.id
+                  ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-110 -translate-y-2 ring-2 ring-white/20'
+                  : 'text-slate-400 hover:text-white hover:bg-white/10 active:scale-95'
+                  }`}
+              >
+                <i className={`text-lg mb-0.5 fa-solid ${item.icon}`}></i>
+                <span className="text-[8px] font-bold uppercase tracking-tighter scale-75 origin-top">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <style>{`
          .no-scrollbar::-webkit-scrollbar {
