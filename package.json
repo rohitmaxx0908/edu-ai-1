@@ -9,6 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.0.1",
+    "@capacitor/android": "^8.0.2",
+    "@capacitor/cli": "^8.0.2",
+    "@capacitor/core": "^8.0.2",
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "@google/genai": "^1.38.0",
     "@supabase/supabase-js": "^2.93.1",
@@ -23,7 +27,9 @@
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",
+    "patch-package": "^8.0.1",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

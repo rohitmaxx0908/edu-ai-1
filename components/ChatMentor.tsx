@@ -17,7 +17,6 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
 
@@ -47,8 +46,6 @@ const ChatMentor: React.FC<ChatMentorProps> = ({ profile, assessment }) => {
     setIsLoading(true);
 
     try {
-      // Build context string from user profile and assessment
-      // Build context string from user profile and assessment
       const context = `
 User Profile Context:
 - Name: ${profile.personalContext.name || 'User'}
@@ -71,172 +68,185 @@ User Query: ${msgToSend}`;
   };
 
   const renderContent = (msg: Message) => {
+    // Simple markdown-like parsing for the chat
     const textNodes = msg.text.split('\n').map((line, i) => {
       const trimmed = line.trim();
-      if (!trimmed) return <div key={i} className="h-4" />;
+      if (!trimmed) return <div key={i} className="h-2" />;
 
-      if (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 60 && !trimmed.startsWith('•')) {
+      if (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 60 && !trimmed.startsWith('•') && !trimmed.startsWith('-')) {
         return (
-          <div key={i} className="mt-12 mb-6 first:mt-0">
-            <h2 className="text-slate-900 font-black text-xs tracking-[0.3em] uppercase flex items-center gap-3">
-              <span className="w-6 h-[2px] bg-indigo-600"></span>
-              {trimmed}
-            </h2>
-          </div>
+          <h3 key={i} className="text-indigo-900 font-extrabold text-xs tracking-[0.2em] uppercase mt-6 mb-3 flex items-center gap-2">
+            <span className="w-1 h-3 bg-indigo-500 rounded-full"></span>
+            {trimmed}
+          </h3>
         );
       }
 
       if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.match(/^\d\./)) {
         return (
-          <div key={i} className="flex gap-4 ml-2 mb-4 items-start group">
-            <div className="mt-2 w-1.5 h-1.5 rounded-full bg-indigo-200 group-hover:bg-indigo-600 transition-colors shrink-0"></div>
-            <p className="text-slate-600 text-[15px] leading-relaxed font-medium">
+          <div key={i} className="flex gap-3 ml-1 mb-2 items-start group">
+            <div className="mt-2 w-1 h-1 rounded-full bg-indigo-400 shrink-0"></div>
+            <p className="text-slate-700 text-sm leading-relaxed">
               {trimmed.replace(/^[•-]\s*/, '').replace(/^\d\.\s*/, '')}
             </p>
           </div>
         );
       }
-
-      return <p key={i} className="text-slate-600 text-[15px] leading-relaxed mb-4 font-medium">{trimmed}</p>;
+      return <p key={i} className="text-slate-700 text-sm leading-relaxed mb-3 font-medium">{trimmed}</p>;
     });
 
-    return (
-      <div className="space-y-6">
-        <div>{textNodes}</div>
-      </div>
-    );
+    return <div className="space-y-1">{textNodes}</div>;
   };
 
   return (
-    <div className="flex h-full bg-white">
-      {/* Left Panel: Twin Monitor */}
-      <div className="hidden lg:flex w-80 border-r border-slate-100 flex-col bg-slate-50/30 p-8">
-        <div className="mb-10">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Twin State</label>
-          <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm space-y-4">
-            <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Target Role</p>
-              <p className="text-sm font-black text-slate-900">{profile.careerTarget.desiredRole}</p>
-            </div>
-            <div className="pt-4 border-t border-slate-50">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Current Level</p>
-              <span className="inline-block px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                {assessment.level}
-              </span>
-            </div>
-          </div>
-        </div>
+    <div className="flex h-[calc(100vh-80px)] md:h-[calc(100vh-100px)] bg-slate-50 overflow-hidden relative">
 
-        <div className="mb-10">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Grounded Logic</label>
-          <div className="space-y-3">
-            {assessment.next_priority_actions.slice(0, 2).map((act, idx) => (
-              <div key={idx} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                <p className="text-[9px] font-black text-indigo-600 uppercase mb-1">Priority 0{act.order}</p>
-                <p className="text-[11px] font-bold text-slate-700 leading-tight">{act.action}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-auto">
-          <div className="p-5 bg-slate-900 rounded-2xl text-white relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-              <i className="fa-solid fa-brain text-4xl"></i>
-            </div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 opacity-50 relative z-10">Agent Intelligence</p>
-            <p className="text-[11px] font-medium leading-relaxed relative z-10">A personalized mentoring stream grounded in your career trajectory and skill inventory.</p>
-          </div>
-        </div>
+      {/* Absolute Background Elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-300/20 rounded-full blur-[120px] mix-blend-multiply animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-300/20 rounded-full blur-[100px] mix-blend-multiply animate-pulse delay-1000"></div>
       </div>
 
-      {/* Main Analysis Column */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="px-10 py-6 border-b border-slate-50 flex justify-between items-center bg-white z-10">
-          <div className="flex flex-col">
-            <h2 className="text-slate-900 font-black text-xs uppercase tracking-[0.4em]">Twin Dialogue Workspace</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Profile Synced: {profile.personalContext.name}</span>
+      {/* Main Chat Container */}
+      <div className="flex-1 flex flex-col relative z-20 max-w-5xl mx-auto w-full shadow-2xl bg-white/80 backdrop-blur-xl md:rounded-3xl border border-white/50 md:my-4 overflow-hidden">
+
+        {/* Header HUD */}
+        <div className="px-6 py-4 border-b border-slate-100 bg-white/50 backdrop-blur-md flex justify-between items-center z-30">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-indigo-500/30 blur-md rounded-full animate-pulse"></div>
+              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center relative shadow-lg">
+                <i className="fa-solid fa-robot text-white text-sm"></i>
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Twin Agent <span className="text-indigo-500">v2.4</span></h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Online & Synced
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMessages([])} className="text-[9px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors">Clear Stream</button>
-          </div>
-        </header>
 
-        {/* Stream Area */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth bg-white">
-          <div className="max-w-3xl mx-auto px-10 py-16 space-y-12">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start animate-in fade-in slide-in-from-bottom-2 duration-500'}`}>
-                <div className={`${msg.role === 'user' ? 'max-w-[80%] bg-slate-50 border border-slate-100 p-5 rounded-[1.5rem] shadow-sm' : 'w-full'}`}>
-                  {msg.role === 'user' ? (
-                    <p className="text-slate-800 text-[15px] font-bold leading-relaxed">{msg.text}</p>
-                  ) : (
-                    <div className="max-w-none prose prose-slate">
-                      {renderContent(msg)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {isLoading && (
-              <div className="flex items-center gap-4 py-6">
-                <div className="flex gap-1">
-                  <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce"></div>
-                </div>
-                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Twin Reasoning...</span>
-              </div>
-            )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setMessages([])}
+              className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+              title="Clear Chat"
+            >
+              <i className="fa-solid fa-trash-can text-sm"></i>
+            </button>
           </div>
         </div>
 
-        {/* Input Dock */}
-        <div className="p-8 bg-white border-t border-slate-50">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex flex-wrap gap-2 mb-6">
-              {[
-                { label: "Identify my next critical skill node", icon: "fa-diagram-project" },
-                { label: "Analyze my roadmap risks", icon: "fa-chart-simple" },
-              ].map((chip) => (
-                <button
-                  key={chip.label}
-                  onClick={() => handleSend(chip.label)}
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group shadow-sm hover:border-slate-900 hover:bg-slate-900 hover:text-white"
-                >
-                  <i className={`fa-solid ${chip.icon} opacity-30 group-hover:opacity-100 text-[8px]`}></i>
-                  {chip.label}
-                </button>
-              ))}
+        {/* Messages Stream */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth p-4 md:p-8 space-y-6">
+          {messages.length === 0 && (
+            <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
+              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                <i className="fa-solid fa-comment-dots text-3xl text-slate-300"></i>
+              </div>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Channel Open</p>
+              <p className="text-xs text-slate-300 mt-2">Initialize dialogue sequence...</p>
             </div>
+          )}
 
-            <div className="relative">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Synchronize with your Twin Agent..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium focus:bg-white focus:ring-1 focus:ring-slate-900 outline-none transition-all pr-16 shadow-inner"
-              />
-              <button
-                onClick={() => handleSend()}
-                disabled={isLoading || !input.trim()}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-slate-900 text-white rounded-xl disabled:bg-slate-100 disabled:text-slate-300 transition-all hover:bg-indigo-600 active:scale-95 shadow-md shadow-slate-900/10"
-                aria-label="Send message"
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+
+              {/* Bot Avatar (Desktop) */}
+              {msg.role === 'model' && (
+                <div className="hidden md:flex flex-col items-center mr-4 mt-2">
+                  <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shadow-lg mb-2">
+                    <i className="fa-solid fa-robot text-[10px] text-white"></i>
+                  </div>
+                </div>
+              )}
+
+              <div
+                className={`max-w-[85%] md:max-w-[75%] p-5 md:p-6 rounded-3xl shadow-sm relative group transition-all
+                  ${msg.role === 'user'
+                    ? 'bg-slate-900 text-white rounded-br-none'
+                    : 'bg-white border border-slate-100 rounded-tl-none'
+                  }`}
               >
-                <i className="fa-solid fa-arrow-up text-sm"></i>
-              </button>
+                {msg.role === 'user' ? (
+                  <p className="text-sm md:text-[15px] font-medium leading-relaxed">{msg.text}</p>
+                ) : (
+                  <div className="prose prose-sm max-w-none">
+                    {renderContent(msg)}
+                  </div>
+                )}
+
+                {/* Timestamp / Meta */}
+                <p className={`text-[9px] font-bold uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-opacity absolute -bottom-5 ${msg.role === 'user' ? 'right-0 text-slate-400' : 'left-0 text-slate-300'}`}>
+                  {msg.role === 'user' ? 'You' : 'Twin Agent'} • Now
+                </p>
+              </div>
             </div>
-            <p className="text-center mt-6 text-[8px] text-slate-300 font-black uppercase tracking-[0.5em]">
-              Strategic Feedback Loop Activated
-            </p>
+          ))}
+
+          {isLoading && (
+            <div className="flex justify-start animate-in fade-in duration-300 pl-12">
+              <div className="bg-white border border-slate-100 px-6 py-4 rounded-3xl rounded-tl-none shadow-sm flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="p-4 md:p-6 bg-white border-t border-slate-100 relative z-30">
+          {/* Quick Chips */}
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+            {[
+              "Analyze my skill gaps",
+              "Trend forecast integration",
+              "Suggest project ideas",
+              "Audit my portfolio"
+            ].map((chip) => (
+              <button
+                key={chip}
+                onClick={() => handleSend(chip)}
+                className="whitespace-nowrap px-4 py-1.5 bg-slate-50 border border-slate-200 hover:border-indigo-300 hover:bg-white text-slate-500 hover:text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all shadow-sm"
+              >
+                {chip}
+              </button>
+            ))}
           </div>
+
+          <div className="relative flex items-end gap-2 bg-slate-50 border-2 border-slate-100 focus-within:border-indigo-200 focus-within:bg-white rounded-3xl p-2 transition-all shadow-inner">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Query your Twin Agent..."
+              className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium text-slate-800 placeholder:text-slate-400 resize-none max-h-32 min-h-[44px] py-3 px-4"
+              rows={1}
+            />
+            <button
+              onClick={() => handleSend()}
+              disabled={isLoading || !input.trim()}
+              className="w-10 h-10 mb-0.5 rounded-2xl bg-slate-900 text-white flex items-center justify-center hover:bg-indigo-600 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-lg shadow-slate-900/10"
+            >
+              {isLoading ? (
+                <i className="fa-solid fa-spinner animate-spin text-xs"></i>
+              ) : (
+                <i className="fa-solid fa-paper-plane text-xs"></i>
+              )}
+            </button>
+          </div>
+          <p className="text-center mt-3 text-[9px] font-bold text-slate-300 uppercase tracking-widest">
+            AI-Generated Content • Verify Important Information
+          </p>
         </div>
       </div>
     </div>

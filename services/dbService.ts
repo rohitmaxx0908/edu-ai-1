@@ -1,8 +1,8 @@
-
 import { UserProfile, AssessmentResult } from '../types';
+import { rtdb, auth } from './firebase';
+import { ref, get, set, child } from "firebase/database";
 
 const IS_MOCK_MODE = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 export const dbService = {
     async getUserData(): Promise<{ profile: UserProfile | null, assessment: AssessmentResult | null }> {
@@ -17,28 +17,27 @@ export const dbService = {
             return { profile, assessment };
         }
 
-        // 2. Try Backend Sync (to get fresher data)
-        try {
-            const response = await fetch(`${BACKEND_URL}/profile/data`);
-            if (response.ok) {
-                const result = await response.json();
-                const remoteProfile = result.data?.profile;
-                const remoteAssessment = result.data?.assessment;
+        const user = auth.currentUser;
+        if (!user) return { profile, assessment };
 
-                // If backend has data, prefer it over local (or merge)
-                if (remoteProfile) {
-                    profile = remoteProfile;
-                    // Update local cache
-                    localStorage.setItem('enhance_ai_profile', JSON.stringify(remoteProfile));
+        // 2. Try Firebase Realtime Database
+        try {
+            const dbRef = ref(rtdb);
+            const snapshot = await get(child(dbRef, `users/${user.uid}`));
+
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                if (data.profile) {
+                    profile = data.profile;
+                    localStorage.setItem('enhance_ai_profile', JSON.stringify(data.profile));
                 }
-                if (remoteAssessment) {
-                    assessment = remoteAssessment;
-                    // Update local cache
-                    localStorage.setItem('enhance_ai_assessment', JSON.stringify(remoteAssessment));
+                if (data.assessment) {
+                    assessment = data.assessment;
+                    localStorage.setItem('enhance_ai_assessment', JSON.stringify(data.assessment));
                 }
             }
         } catch (error) {
-            console.warn('Backend sync failed, using local data:', error);
+            console.warn('Firebase sync failed, using local data:', error);
         }
 
         return { profile, assessment };
@@ -50,14 +49,13 @@ export const dbService = {
 
         if (IS_MOCK_MODE) return;
 
+        const user = auth.currentUser;
+        if (!user) return;
+
         try {
-            await fetch(`${BACKEND_URL}/profile/save`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ profile: data })
-            });
+            await set(ref(rtdb, `users/${user.uid}/profile`), data);
         } catch (err) {
-            console.error('Background save failed:', err);
+            console.error('Firebase save failed:', err);
         }
     },
 
@@ -67,14 +65,13 @@ export const dbService = {
 
         if (IS_MOCK_MODE) return;
 
+        const user = auth.currentUser;
+        if (!user) return;
+
         try {
-            await fetch(`${BACKEND_URL}/profile/save-assessment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ assessment: data })
-            });
+            await set(ref(rtdb, `users/${user.uid}/assessment`), data);
         } catch (err) {
-            console.error('Background save failed:', err);
+            console.error('Firebase save failed:', err);
         }
     }
 };
