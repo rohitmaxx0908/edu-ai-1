@@ -380,23 +380,32 @@ const App: React.FC = () => {
       )
       }
 
-      {/* Mobile Floating Dock (Moved to Root) */}
+      {/* Mobile Bottom Navigation Bar */}
       {assessment && (
-        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-auto max-w-[95%] z-[9999]">
-          <div className="flex items-center gap-1 bg-slate-900/95 backdrop-blur-xl p-2 rounded-2xl border border-white/10 shadow-2xl shadow-slate-900/50 ring-1 ring-white/10 overflow-x-auto no-scrollbar">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setViewMode(item.id)}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl shrink-0 transition-all duration-300 ${viewMode === item.id
-                  ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-110 -translate-y-2 ring-2 ring-white/20'
-                  : 'text-slate-400 hover:text-white hover:bg-white/10 active:scale-95'
-                  }`}
-              >
-                <i className={`text-lg mb-0.5 fa-solid ${item.icon}`}></i>
-                <span className="text-[8px] font-bold uppercase tracking-tighter scale-75 origin-top">{item.label}</span>
-              </button>
-            ))}
+        <div className="md:hidden fixed bottom-0 left-0 w-full z-[9999]">
+          <div className="bg-slate-900/95 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
+            <div className="flex items-center justify-around p-2 pb-4">
+              {NAV_ITEMS.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setViewMode(item.id)}
+                  className={`flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all duration-200 ${viewMode === item.id
+                    ? 'text-indigo-400'
+                    : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                  <div className={`text-lg mb-1 transition-transform ${viewMode === item.id ? '-translate-y-1' : ''}`}>
+                    <i className={`fa-solid ${item.icon}`}></i>
+                  </div>
+                  <span className={`text-[9px] font-bold uppercase tracking-tight ${viewMode === item.id ? 'opacity-100' : 'opacity-60'}`}>
+                    {item.label}
+                  </span>
+                  {viewMode === item.id && (
+                    <div className="w-1 h-1 rounded-full bg-indigo-500 mt-1"></div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
