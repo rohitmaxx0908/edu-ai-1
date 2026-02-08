@@ -206,16 +206,16 @@ const ChatRoom: React.FC = () => {
         <div className="flex flex-col h-full bg-slate-50 relative group">
 
             {/* Header */}
-            <div className="bg-white/80 backdrop-blur-xl border-b border-slate-100 p-6 flex items-center justify-between z-10 sticky top-0 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 transition-transform hover:scale-105">
-                        <i className="fa-solid fa-comments text-white text-lg"></i>
+            <div className="bg-white/80 backdrop-blur-xl border-b border-slate-100 p-4 md:p-6 flex items-center justify-between z-10 sticky top-0 shadow-sm">
+                <div className="flex items-center gap-3 md:gap-4">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 transition-transform hover:scale-105">
+                        <i className="fa-solid fa-comments text-white text-base md:text-lg"></i>
                     </div>
                     <div>
-                        <h2 className="text-lg font-black text-slate-900 tracking-tight">Community Grid</h2>
+                        <h2 className="text-base md:text-lg font-black text-slate-900 tracking-tight">Community Grid</h2>
                         <div className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Global Neural Link</p>
+                            <p className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest">Global Neural Link</p>
                         </div>
                     </div>
                 </div>
@@ -405,7 +405,7 @@ const ChatRoom: React.FC = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t border-slate-100 relative z-20">
+            <div className="p-3 md:p-4 bg-white border-t border-slate-100 relative z-20">
                 {uploading && (
                     <div className="absolute top-0 left-0 w-full h-1 bg-indigo-50 overflow-hidden">
                         <div className="h-full bg-indigo-500 animate-[progress_1s_ease-in-out_infinite]"></div>

@@ -240,19 +240,19 @@ const App: React.FC = () => {
         return <Academics profile={profile} assessment={assessment} onUpdateProfile={handleUpdateProfile} />;
       case 'mentor':
         return (
-          <div className="h-[calc(100vh-100px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
+          <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
             <ChatMentor profile={profile} assessment={assessment} />
           </div>
         );
       case 'news':
         return (
-          <div className="h-[calc(100vh-100px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
+          <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
             <NewsHub careerTarget={profile.careerTarget.desiredRole} />
           </div>
         );
       case 'discuss':
         return (
-          <div className="h-[calc(100vh-100px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
+          <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
             <ChatRoom />
           </div>
         );
