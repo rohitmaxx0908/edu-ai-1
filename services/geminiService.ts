@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { UserProfile, AssessmentResult, LearningStep } from "../types";
 
 const SYSTEM_PROMPT = `You are a domain-restricted AI assistant.
@@ -242,3 +242,31 @@ export const assessCareerProfile = async (profile: UserProfile): Promise<Assessm
     return result.data;
   });
 };
+
+// --- Direct Gemini Integration ---
+const API_KEY = "AIzaSyB0zN035I-CsJ7OMNhUeKgZc46uu3kcVZ8";
+// Initialize the client (Note: The user provided snippet used constructor options, checking if apiKey is needed there or elsewhere)
+// For @google/genai, it seems to be: const ai = new GoogleGenAI({ apiKey: ... });
+const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+export async function askGemini(prompt: string): Promise<{ answer: string }> {
+  try {
+    // User requested "gemini-3-flash-preview", but we'll use "gemini-1.5-flash" for stability
+    // unless strictly testing the new preview.
+    const response = await ai.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: prompt // Send simple string as per user example
+    });
+
+    // User's example showed accessing .text directly on the response
+    const text = (response as any).text || "No response generated.";
+
+    return { answer: text };
+  } catch (error: any) {
+    console.error("Gemini API Error Details:", error);
+    if (error.response) {
+      console.error("API Response Error:", error.response);
+    }
+    return { answer: `I'm detecting some interference in the neural link. (Error: ${error.message || "Unknown Connection Error"})` };
+  }
+}

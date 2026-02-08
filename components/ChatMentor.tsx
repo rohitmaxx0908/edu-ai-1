@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, AssessmentResult } from '../types';
-import { askAI } from '../api/backend';
+import { askGemini } from '../services/geminiService';
 
 interface Message {
   role: 'user' | 'model';
@@ -58,7 +58,8 @@ User Profile Context:
 
 User Query: ${msgToSend}`;
 
-      const response = await askAI(context);
+      const response = await askGemini(context);
+
       setMessages(prev => [...prev, { role: 'model', text: response.answer || 'Error: Uptime conflict.' }]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'model', text: 'SYSTEM ERROR: Uplink to Twin Agent lost.' }]);

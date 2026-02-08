@@ -281,8 +281,8 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xl font-black text-slate-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">EDU AI</span>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none mt-0.5">Career Engine</span>
+                  <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">EDU AI</span>
+                  <span className="hidden sm:inline text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none mt-0.5">Career Engine</span>
                 </div>
               </div>
 
@@ -321,9 +321,9 @@ const App: React.FC = () => {
               {deferredPrompt && (
                 <button
                   onClick={handleInstallClick}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95"
+                  className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95"
                 >
-                  <i className="fa-solid fa-download"></i> <span className="">Install App</span>
+                  <i className="fa-solid fa-download"></i> <span className="hidden sm:inline">Install App</span>
                 </button>
               )}
 
