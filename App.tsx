@@ -360,12 +360,13 @@ const App: React.FC = () => {
         releaseNotes={updateInfo?.releaseNotes}
       />
 
-      <main className={`flex-1 transition-all duration-500 ${viewMode === 'mentor' || viewMode === 'news' || viewMode === 'discuss' ? 'p-4 sm:p-6 lg:p-8 sm:pb-0 lg:pb-0' : 'py-8 px-4 sm:px-6 lg:px-8'}`}>
+      <main className={`flex-1 transition-all duration-500 pb-28 sm:pb-8 ${viewMode === 'mentor' || viewMode === 'news' || viewMode === 'discuss' ? 'p-4 sm:p-6 lg:p-8' : 'px-4 pt-8 sm:px-6 lg:px-8'}`}>
         {renderContent()}
       </main>
 
       {(!assessment || (viewMode !== 'mentor' && viewMode !== 'news' && viewMode !== 'discuss')) && (
-        <footer className="py-12 border-t border-slate-200 bg-white relative overflow-hidden mt-auto">
+        <footer className="py-12 border-t border-slate-200 bg-white relative overflow-hidden mt-auto hidden md:block">
+          {/* Hiding footer on mobile completely to avoid clutter with bottom nav */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 opacity-20"></div>
           <div className="max-w-7xl mx-auto px-4 flex flex-col items-center">
             <div className="flex items-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
@@ -380,31 +381,41 @@ const App: React.FC = () => {
       )
       }
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Premium Mobile Bottom Navigation */}
       {assessment && (
         <div className="md:hidden fixed bottom-0 left-0 w-full z-[9999]">
-          <div className="bg-slate-900/95 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
-            <div className="flex items-center justify-around p-2 pb-4">
-              {NAV_ITEMS.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setViewMode(item.id)}
-                  className={`flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all duration-200 ${viewMode === item.id
-                    ? 'text-indigo-400'
-                    : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                >
-                  <div className={`text-lg mb-1 transition-transform ${viewMode === item.id ? '-translate-y-1' : ''}`}>
-                    <i className={`fa-solid ${item.icon}`}></i>
-                  </div>
-                  <span className={`text-[9px] font-bold uppercase tracking-tight ${viewMode === item.id ? 'opacity-100' : 'opacity-60'}`}>
-                    {item.label}
-                  </span>
-                  {viewMode === item.id && (
-                    <div className="w-1 h-1 rounded-full bg-indigo-500 mt-1"></div>
-                  )}
-                </button>
-              ))}
+          <div className="bg-white/90 backdrop-blur-2xl border-t border-indigo-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[1.5rem] pb-2 pt-1">
+            <div className="flex items-center justify-around px-2">
+              {NAV_ITEMS.map((item) => {
+                const isActive = viewMode === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setViewMode(item.id)}
+                    className="relative group p-2 flex flex-col items-center justify-end h-16 w-14"
+                  >
+                    {/* Floating Active Background */}
+                    {isActive && (
+                      <div className="absolute top-1 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/30 animate-in zoom-in-50 duration-300"></div>
+                    )}
+
+                    {/* Icon */}
+                    <div className={`relative z-10 transition-all duration-300 ${isActive ? '-translate-y-2 text-white' : 'text-slate-400 group-hover:text-indigo-500'}`}>
+                      <i className={`text-lg fa-solid ${item.icon}`}></i>
+                    </div>
+
+                    {/* Label */}
+                    <span className={`relative z-10 text-[9px] font-bold uppercase tracking-tight transition-all duration-300 ${isActive ? 'translate-y-[-2px] text-indigo-600 opacity-100' : 'translate-y-2 opacity-0 h-0'}`}>
+                      {item.label}
+                    </span>
+
+                    {/* Inactive Dot */}
+                    {!isActive && (
+                      <span className="absolute bottom-2 w-1 h-1 rounded-full bg-slate-200 group-hover:bg-indigo-300 transition-colors"></span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -417,6 +428,10 @@ const App: React.FC = () => {
          .no-scrollbar {
            -ms-overflow-style: none;
            scrollbar-width: none;
+         }
+         /* Safe area support for newer phones */
+         .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
          }
       `}</style>
     </div>
