@@ -218,8 +218,8 @@ const SocialHub: React.FC<SocialHubProps> = ({ profile }) => {
           return (
             <div
               key={opp.id}
-              className="group relative flex flex-col bg-white rounded-[2rem] border border-slate-100 transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 overflow-hidden"
-              style={{ animationDelay: `${idx * 50}ms` }}
+              className="group relative flex flex-col bg-white rounded-[2rem] border border-slate-100 transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 overflow-hidden animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards"
+              style={{ animationDelay: `${idx * 100}ms` }}
             >
               {/* Type Strip */}
               <div className={`h-1.5 w-full bg-gradient-to-r ${styles.color}`}></div>
