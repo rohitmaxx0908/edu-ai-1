@@ -5,6 +5,7 @@ import {
     Timestamp, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useTheme } from '../context/ThemeContext';
 
 // --- Interfaces ---
 interface ReplyInfo {
@@ -67,6 +68,9 @@ const ChatRoom: React.FC = () => {
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
     const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
     const [unlockedRooms, setUnlockedRooms] = useState<Set<string>>(new Set());
+
+    // --- Theme Context ---
+    const { theme, t } = useTheme();
 
     // --- State: Modals ---
     const [showCreateRoom, setShowCreateRoom] = useState(false);
@@ -315,24 +319,24 @@ const ChatRoom: React.FC = () => {
         'Unknown Grid';
 
     return (
-        <div className="flex w-full h-full bg-[#f8fafc] overflow-hidden relative">
+        <div className={`flex w-full h-full ${t.bg} overflow-hidden relative transition-colors duration-500`}>
 
             {/* Background Atmosphere */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-indigo-50/50 to-transparent"></div>
-                <div className="absolute -left-20 top-20 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl"></div>
-                <div className="absolute -right-20 bottom-20 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className={`absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b ${theme === 'dark' ? 'from-cyan-900/10' : 'from-indigo-50/50'} to-transparent transition-colors duration-1000`}></div>
+                <div className={`absolute -left-20 top-20 w-96 h-96 ${theme === 'dark' ? 'bg-cyan-500/5' : 'bg-indigo-500/5'} rounded-full blur-3xl transition-colors duration-1000`}></div>
+                <div className={`absolute -right-20 bottom-20 w-96 h-96 ${theme === 'dark' ? 'bg-purple-500/5' : 'bg-purple-500/5'} rounded-full blur-3xl transition-colors duration-1000`}></div>
             </div>
 
             {/* --- SIDEBAR --- */}
-            <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl transform transition-transform duration-300 lg:translate-x-0 lg:stationary lg:relative lg:flex lg:flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed inset-y-0 left-0 z-40 w-72 ${t.sidebar} transform transition-all duration-300 lg:translate-x-0 lg:stationary lg:relative lg:flex lg:flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Sidebar Header */}
-                <div className="p-6 border-b border-indigo-50/50 flex items-center justify-between">
+                <div className={`p-6 border-b ${t.divider} flex items-center justify-between`}>
                     <div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tighter flex items-center gap-2">
-                            <i className="fa-solid fa-layer-group text-indigo-600"></i> NEXUS
+                        <h2 className={`text-xl font-black ${t.sidebarText} tracking-tighter flex items-center gap-2`}>
+                            <i className={`fa-solid fa-layer-group ${theme === 'dark' ? 'text-cyan-500' : 'text-indigo-600'}`}></i> NEXUS
                         </h2>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Encrypted Network</p>
+                        <p className={`text-[9px] font-bold ${t.sidebarSub} uppercase tracking-widest mt-1`}>Encrypted Network</p>
                     </div>
                 </div>
 
@@ -340,16 +344,16 @@ const ChatRoom: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
                     {/* System Channels */}
                     <div className="space-y-1">
-                        <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <p className={`px-4 text-[9px] font-black ${t.sidebarSub} uppercase tracking-widest mb-2 flex items-center gap-2`}>
                             <i className="fa-solid fa-server text-[8px]"></i> Core Uplinks
                         </p>
                         {SYSTEM_CHANNELS.map(ch => (
                             <button
                                 key={ch.id}
                                 onClick={() => { setActiveChannel(ch.id); setSidebarOpen(false); }}
-                                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden ${activeChannel === ch.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-500 hover:bg-white hover:shadow-sm'}`}
+                                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden ${activeChannel === ch.id ? t.activeChannel : t.inactiveChannel}`}
                             >
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors text-xs ${activeChannel === ch.id ? 'bg-white/20 text-white' : 'bg-slate-100 ' + ch.color}`}>
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors text-xs ${activeChannel === ch.id ? t.channelIconActive : t.channelIconInactive + ' ' + ch.color}`}>
                                     <i className={`fa-solid ${ch.icon}`}></i>
                                 </div>
                                 <div className="text-left flex-1 min-w-0">
@@ -406,14 +410,14 @@ const ChatRoom: React.FC = () => {
                 </div>
 
                 {/* User Profile Footer */}
-                <div className="p-4 border-t border-indigo-50/50 bg-white/40">
-                    <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-900 text-white shadow-lg">
+                <div className={`p-4 border-t ${t.divider} ${theme === 'dark' ? 'bg-black/20' : 'bg-white/40'}`}>
+                    <div className={`flex items-center gap-3 p-2 rounded-xl ${t.userProfile}`}>
                         {auth.currentUser?.photoURL ?
                             <img src={auth.currentUser.photoURL} className="w-8 h-8 rounded-lg object-cover border border-white/20" alt="" /> :
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs">{auth.currentUser?.displayName?.[0]}</div>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${theme === 'dark' ? 'bg-cyan-700' : 'bg-indigo-500'}`}>{auth.currentUser?.displayName?.[0]}</div>
                         }
                         <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-black uppercase tracking-wider truncate">{auth.currentUser?.displayName || 'Anonymous'}</p>
+                            <p className="text-[10px] font-black uppercase tracking-wider truncate text-white">{auth.currentUser?.displayName || 'Anonymous'}</p>
                             <p className="text-[8px] font-bold text-emerald-400 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE</p>
                         </div>
                     </div>
@@ -423,33 +427,36 @@ const ChatRoom: React.FC = () => {
             {/* --- MAIN CHAT AREA --- */}
             <div className="flex-1 flex flex-col h-full relative z-10 w-full min-w-0">
                 {/* Header */}
-                <div className="h-16 px-6 bg-white/70 backdrop-blur-md border-b border-indigo-50 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+                <div className={`h-16 px-6 ${t.header} flex items-center justify-between sticky top-0 z-30 shadow-sm transition-colors`}>
                     <div className="flex items-center gap-4 min-w-0">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm"><i className="fa-solid fa-bars"></i></button>
+                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className={`lg:hidden w-8 h-8 rounded-full border flex items-center justify-center shadow-sm ${t.iconBtn} border-transparent`}><i className="fa-solid fa-bars"></i></button>
                         <div className="min-w-0">
-                            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 truncate">
+                            <h2 className={`text-sm font-black ${t.headerText} uppercase tracking-widest flex items-center gap-2 truncate`}>
                                 <span className="w-2 h-2 shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
                                 {currentChannelName}
                             </h2>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block truncate">
+                            <p className={`text-[9px] font-bold ${t.sidebarSub} uppercase tracking-widest hidden sm:block truncate`}>
                                 {SYSTEM_CHANNELS.find(c => c.id === activeChannel)?.description || 'Encrypted Channel'}
                             </p>
                         </div>
                     </div>
 
-                    {/* Participants Mockup */}
-                    <div className="flex -space-x-2 shrink-0">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="w-7 h-7 rounded-full bg-slate-200 ring-2 ring-white flex items-center justify-center text-[8px] font-bold text-slate-500 border border-slate-300">
-                                <i className="fa-solid fa-user"></i>
-                            </div>
-                        ))}
-                        <div className="w-7 h-7 rounded-full bg-slate-900 ring-2 ring-white flex items-center justify-center text-[8px] font-bold text-white shadow-lg">+</div>
+                    {/* Participants & Theme Toggle */}
+                    <div className="flex items-center gap-4">
+                        {/* Participants */}
+                        <div className="flex -space-x-2 shrink-0">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className={`w-7 h-7 rounded-full ring-2 ring-white flex items-center justify-center text-[8px] font-bold border ${theme === 'dark' ? 'bg-slate-800 text-slate-400 border-slate-700 ring-slate-900' : 'bg-slate-200 text-slate-500 border-slate-300'}`}>
+                                    <i className="fa-solid fa-user"></i>
+                                </div>
+                            ))}
+                            <div className={`w-7 h-7 rounded-full ring-2 ${theme === 'dark' ? 'bg-cyan-600 ring-slate-900' : 'bg-slate-900 ring-white'} flex items-center justify-center text-[8px] font-bold text-white shadow-lg`}>+</div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Messages Feed */}
-                <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 scroll-smooth bg-slate-50/30">
+                <div className={`flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 scroll-smooth ${t.chatBg}`}>
                     {/* Error Toast */}
                     {error && (
                         <div className="sticky top-4 left-0 right-0 mx-auto w-max bg-red-500 text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 z-50 animate-bounce">
@@ -481,22 +488,22 @@ const ChatRoom: React.FC = () => {
                                     {/* Avatar */}
                                     <div className={`w-8 h-8 rounded-xl shrink-0 overflow-hidden shadow-sm transition-all border border-black/5 ${!showAvatar ? 'opacity-0 h-0' : 'opacity-100'}`}>
                                         {msg.photoURL ? <img src={msg.photoURL} alt="" className="w-full h-full object-cover" /> :
-                                            <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">{msg.displayName?.[0]}</div>}
+                                            <div className={`w-full h-full flex items-center justify-center text-[10px] font-black ${theme === 'dark' ? 'bg-gradient-to-br from-slate-700 to-slate-800 text-slate-400' : 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-500'}`}>{msg.displayName?.[0]}</div>}
                                     </div>
 
                                     {/* Content Bubble */}
                                     <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                        {showAvatar && <span className="text-[9px] font-bold text-slate-400 mb-1 px-1 uppercase tracking-wide">{msg.displayName}</span>}
+                                        {showAvatar && <span className={`text-[9px] font-bold ${t.sidebarSub} mb-1 px-1 uppercase tracking-wide`}>{msg.displayName}</span>}
 
                                         <div className="relative group/bubble">
                                             {msg.replyTo && (
-                                                <div className={`mb-1 px-3 py-1.5 rounded-lg text-[9px] backdrop-blur-sm border-l-2 ${isMe ? 'bg-indigo-900/10 border-indigo-400 text-indigo-900' : 'bg-slate-200/50 border-slate-400 text-slate-600'}`}>
+                                                <div className={`mb-1 px-3 py-1.5 rounded-lg text-[9px] backdrop-blur-sm border-l-2 ${isMe ? 'bg-black/10 border-white/40 text-white' : (theme === 'dark' ? 'bg-black/20 border-slate-600 text-slate-400' : 'bg-slate-200/50 border-slate-400 text-slate-600')}`}>
                                                     <span className="font-bold block opacity-75">Replying to {msg.replyTo.displayName}</span>
                                                     <span className="truncate block max-w-[150px] opacity-60 italic">{msg.replyTo.text}</span>
                                                 </div>
                                             )}
 
-                                            <div className={`px-4 py-2.5 shadow-sm relative transition-all duration-300 ${isMe ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-[1.2rem] rounded-tr-sm shadow-indigo-500/20 hover:shadow-indigo-600/30' : 'bg-white/80 backdrop-blur-sm text-slate-800 rounded-[1.2rem] rounded-tl-sm border border-white/40 shadow-sm hover:shadow-md'}`}>
+                                            <div className={`px-4 py-2.5 shadow-sm relative transition-all duration-300 ${isMe ? `bg-gradient-to-br ${t.sentBubble} text-white rounded-[1.2rem] rounded-tr-sm hover:shadow-lg` : `${t.receivedBubble} backdrop-blur-sm rounded-[1.2rem] rounded-tl-sm border shadow-sm hover:shadow-md`}`}>
                                                 {msg.type === 'text' && <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{renderTextWithMentions(msg.text || '')}</div>}
                                                 {msg.type === 'media' && msg.mediaUrl && (
                                                     <div className="mt-1 rounded-xl overflow-hidden max-w-xs border border-white/10 shadow-lg">
@@ -510,18 +517,18 @@ const ChatRoom: React.FC = () => {
 
                                             {/* Hover Actions */}
                                             <div className={`absolute top-1/2 -translate-y-1/2 ${isMe ? '-left-20' : '-right-20'} opacity-0 group-hover/bubble:opacity-100 transition-all duration-300 flex items-center gap-1`}>
-                                                <button onClick={() => toggleLike(msg)} className={`w-6 h-6 rounded-full flex items-center justify-center bg-white shadow-lg hover:scale-110 transition-all ${isLiked ? 'text-red-500' : 'text-slate-300 hover:text-red-500'}`}><i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-[10px]`}></i></button>
-                                                <button onClick={() => setReplyingTo(msg)} className="w-6 h-6 rounded-full flex items-center justify-center bg-white shadow-lg hover:scale-110 transition-all text-slate-300 hover:text-indigo-500"><i className="fa-solid fa-reply text-[10px]"></i></button>
+                                                <button onClick={() => toggleLike(msg)} className={`w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'} ${isLiked ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}><i className={`${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-[10px]`}></i></button>
+                                                <button onClick={() => setReplyingTo(msg)} className={`w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:text-cyan-500' : 'bg-white text-slate-300 hover:text-indigo-500'}`}><i className="fa-solid fa-reply text-[10px]"></i></button>
                                                 {isMe && (
-                                                    <button onClick={() => deleteMessage(msg)} className="w-6 h-6 rounded-full flex items-center justify-center bg-white shadow-lg hover:scale-110 transition-all text-slate-300 hover:text-red-500 hover:bg-red-50" title="Delete Message">
+                                                    <button onClick={() => deleteMessage(msg)} className={`w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-300'} hover:text-red-500 hover:bg-red-500/10`} title="Delete Message">
                                                         <i className="fa-solid fa-trash-can text-[10px]"></i>
                                                     </button>
                                                 )}
                                                 <div className="relative">
-                                                    <button onClick={() => setActiveMenuId(activeMenuId === msg.id ? null : msg.id)} className="w-6 h-6 rounded-full flex items-center justify-center bg-white shadow-lg hover:scale-110 transition-all text-slate-300 hover:text-slate-900"><i className="fa-solid fa-ellipsis-vertical text-[10px]"></i></button>
+                                                    <button onClick={() => setActiveMenuId(activeMenuId === msg.id ? null : msg.id)} className={`w-6 h-6 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-white text-slate-300 hover:text-slate-900'}`}><i className="fa-solid fa-ellipsis-vertical text-[10px]"></i></button>
                                                     {activeMenuId === msg.id && (
-                                                        <div className="absolute top-full left-0 mt-2 w-28 bg-white rounded-xl shadow-xl border border-slate-100 p-1 z-50 animate-in zoom-in-95 origin-top-left">
-                                                            {msg.text && <button onClick={() => copyToClipboard(msg.text!)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">Copy Text</button>}
+                                                        <div className={`absolute top-full left-0 mt-2 w-28 rounded-xl shadow-xl border p-1 z-50 animate-in zoom-in-95 origin-top-left ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                                                            {msg.text && <button onClick={() => copyToClipboard(msg.text!)} className={`w-full text-left px-3 py-2 text-[10px] font-bold rounded-lg transition-colors ${theme === 'dark' ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-50'}`}>Copy Text</button>}
                                                             {isMe && <button onClick={() => deleteMessage(msg)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors">Delete</button>}
                                                         </div>
                                                     )}
@@ -537,45 +544,45 @@ const ChatRoom: React.FC = () => {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 md:p-6 bg-white/60 backdrop-blur-xl border-t border-white/20 relative z-30">
+                <div className={`p-4 md:p-6 backdrop-blur-xl border-t relative z-30 ${t.inputBg} ${t.divider}`}>
                     <div className="max-w-4xl mx-auto">
                         {/* Reply Preview */}
                         {replyingTo && (
-                            <div className="flex items-center justify-between bg-white border border-indigo-100 rounded-2xl p-3 mb-3 shadow-lg shadow-indigo-100/50 animate-in slide-in-from-bottom-2">
+                            <div className={`flex items-center justify-between border rounded-2xl p-3 mb-3 shadow-lg animate-in slide-in-from-bottom-2 ${theme === 'dark' ? 'bg-slate-800 border-cyan-500/30 shadow-cyan-900/20' : 'bg-white border-indigo-100 shadow-indigo-100/50'}`}>
                                 <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className="w-1 h-8 rounded-full bg-indigo-500"></div>
+                                    <div className={`w-1 h-8 rounded-full ${theme === 'dark' ? 'bg-cyan-500' : 'bg-indigo-500'}`}></div>
                                     <div>
-                                        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wide">Replying to {replyingTo.displayName}</p>
-                                        <p className="text-xs text-slate-500 truncate max-w-[200px] border-l-2 border-slate-200 pl-2">{replyingTo.text || 'Media Attachment'}</p>
+                                        <p className={`text-[10px] font-bold uppercase tracking-wide ${theme === 'dark' ? 'text-cyan-400' : 'text-indigo-500'}`}>Replying to {replyingTo.displayName}</p>
+                                        <p className={`text-xs truncate max-w-[200px] border-l-2 pl-2 ${theme === 'dark' ? 'text-slate-400 border-slate-600' : 'text-slate-500 border-slate-200'}`}>{replyingTo.text || 'Media Attachment'}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setReplyingTo(null)} className="w-6 h-6 rounded-full bg-slate-100 text-slate-400 hover:bg-red-100 hover:text-red-500 transition-colors flex items-center justify-center"><i className="fa-solid fa-xmark text-xs"></i></button>
+                                <button onClick={() => setReplyingTo(null)} className="w-6 h-6 rounded-full bg-slate-100/10 text-slate-400 hover:bg-red-500/20 hover:text-red-500 transition-colors flex items-center justify-center"><i className="fa-solid fa-xmark text-xs"></i></button>
                             </div>
                         )}
 
                         {/* Sticker Picker */}
                         {showStickers && (
-                            <div className="absolute bottom-24 left-6 md:left-20 bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-white/50 p-6 grid grid-cols-6 gap-3 w-80 animate-in zoom-in-95 z-50 origin-bottom-left">
-                                {STICKERS.map(s => <button key={s} onClick={() => sendSticker(s)} className="text-2xl hover:bg-indigo-50 p-2 rounded-xl transition-all hover:scale-125">{s}</button>)}
+                            <div className={`absolute bottom-24 left-6 md:left-20 backdrop-blur-2xl rounded-[2rem] shadow-2xl border p-6 grid grid-cols-6 gap-3 w-80 animate-in zoom-in-95 z-50 origin-bottom-left ${theme === 'dark' ? 'bg-slate-900/90 border-slate-700' : 'bg-white/90 border-white/50'}`}>
+                                {STICKERS.map(s => <button key={s} onClick={() => sendSticker(s)} className="text-2xl hover:bg-black/5 p-2 rounded-xl transition-all hover:scale-125">{s}</button>)}
                             </div>
                         )}
 
                         {/* Capsule Input */}
-                        <div className="flex gap-2 items-end bg-white rounded-[2rem] p-2 shadow-2xl border border-slate-100 hover:border-indigo-100 transition-all ring-1 ring-slate-50 focus-within:ring-4 focus-within:ring-indigo-500/10">
-                            <button onClick={() => setShowStickers(!showStickers)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${showStickers ? 'bg-indigo-100 text-indigo-600 rotate-180' : 'bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-500'}`}><i className="fa-solid fa-face-smile text-lg"></i></button>
+                        <div className={`flex gap-2 items-end rounded-[2rem] p-2 shadow-2xl border transition-all ring-1 focus-within:ring-4 ${theme === 'dark' ? 'bg-slate-900 border-slate-700 ring-slate-800 focus-within:ring-cyan-500/10' : 'bg-white border-slate-100 ring-slate-50 focus-within:ring-indigo-500/10'}`}>
+                            <button onClick={() => setShowStickers(!showStickers)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${showStickers ? (theme === 'dark' ? 'bg-cyan-900/30 text-cyan-400 rotate-180' : 'bg-indigo-100 text-indigo-600 rotate-180') : (theme === 'dark' ? 'bg-slate-800 text-slate-500 hover:bg-cyan-900/20 hover:text-cyan-400' : 'bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-500')}`}><i className="fa-solid fa-face-smile text-lg"></i></button>
 
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*" onChange={handleFileUpload} />
-                            <button onClick={() => fileInputRef.current?.click()} className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-50 text-slate-400 hover:bg-purple-50 hover:text-purple-500 transition-all"><i className="fa-solid fa-paperclip text-lg"></i></button>
+                            <button onClick={() => fileInputRef.current?.click()} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${t.iconBtn}`}><i className="fa-solid fa-paperclip text-lg"></i></button>
 
                             <textarea
                                 value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                                 placeholder={`Signal to #${currentChannelName.split(' ')[0]}...`}
-                                className="flex-1 bg-transparent border-none outline-none text-sm py-2.5 px-2 max-h-32 resize-none placeholder:text-slate-400 text-slate-800 font-medium font-sans"
+                                className={`flex-1 bg-transparent border-none outline-none text-sm py-2.5 px-2 max-h-32 resize-none font-medium font-sans ${t.inputText}`}
                                 rows={1}
                             />
 
-                            <button onClick={() => sendMessage()} disabled={!newMessage.trim() && !uploading} className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg hover:bg-indigo-600 disabled:opacity-50 disabled:shadow-none transition-all transform active:scale-90 hover:rotate-12">
+                            <button onClick={() => sendMessage()} disabled={!newMessage.trim() && !uploading} className={`w-10 h-10 rounded-full text-white flex items-center justify-center shadow-lg disabled:opacity-50 disabled:shadow-none transition-all transform active:scale-90 hover:rotate-12 ${theme === 'dark' ? 'bg-cyan-600 hover:bg-cyan-500' : 'bg-slate-900 hover:bg-indigo-600'}`}>
                                 {uploading ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-paper-plane text-xs"></i>}
                             </button>
                         </div>
@@ -585,25 +592,25 @@ const ChatRoom: React.FC = () => {
 
             {/* --- MODAL: CREATE ROOM --- */}
             {showCreateRoom && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 border border-white/50 animate-in zoom-in-95 scale-100">
+                <div className={`fixed inset-0 z-50 flex items-center justify-center animate-in fade-in ${t.modalOverlay}`}>
+                    <div className={`rounded-3xl shadow-2xl w-full max-w-md p-6 border animate-in zoom-in-95 scale-100 ${t.modalBg}`}>
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-black text-slate-800">Initialize Node</h3>
-                            <button onClick={() => setShowCreateRoom(false)} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                            <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-slate-100' : 'text-slate-800'}`}>Initialize Node</h3>
+                            <button onClick={() => setShowCreateRoom(false)} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><i className="fa-solid fa-xmark"></i></button>
                         </div>
 
                         <form onSubmit={handleCreateRoom} className="space-y-4">
                             <div>
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">Node Identification</label>
-                                <input required type="text" value={newRoomName} onChange={e => setNewRoomName(e.target.value)} placeholder="e.g. Design Team" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:font-normal" />
+                                <input required type="text" value={newRoomName} onChange={e => setNewRoomName(e.target.value)} placeholder="e.g. Design Team" className={`w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 transition-all placeholder:font-normal ${t.modalInput} ${theme === 'dark' ? 'focus:ring-cyan-500/20' : 'focus:ring-indigo-500/20 focus:border-indigo-500'}`} />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <button type="button" onClick={() => setNewRoomType('public')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${newRoomType === 'public' ? 'border-indigo-500 bg-indigo-50 text-indigo-600' : 'border-slate-200 hover:border-slate-300 text-slate-400'}`}>
+                                <button type="button" onClick={() => setNewRoomType('public')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${newRoomType === 'public' ? (theme === 'dark' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400' : 'border-indigo-500 bg-indigo-50 text-indigo-600') : (theme === 'dark' ? 'border-slate-700 hover:border-slate-600 text-slate-500' : 'border-slate-200 hover:border-slate-300 text-slate-400')}`}>
                                     <i className="fa-solid fa-globe text-xl"></i>
                                     <span className="text-xs font-bold uppercase">Public</span>
                                 </button>
-                                <button type="button" onClick={() => setNewRoomType('private')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${newRoomType === 'private' ? 'border-indigo-500 bg-indigo-50 text-indigo-600' : 'border-slate-200 hover:border-slate-300 text-slate-400'}`}>
+                                <button type="button" onClick={() => setNewRoomType('private')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${newRoomType === 'private' ? (theme === 'dark' ? 'border-cyan-500 bg-cyan-900/20 text-cyan-400' : 'border-indigo-500 bg-indigo-50 text-indigo-600') : (theme === 'dark' ? 'border-slate-700 hover:border-slate-600 text-slate-500' : 'border-slate-200 hover:border-slate-300 text-slate-400')}`}>
                                     <i className="fa-solid fa-lock text-xl"></i>
                                     <span className="text-xs font-bold uppercase">Private</span>
                                 </button>
@@ -611,12 +618,12 @@ const ChatRoom: React.FC = () => {
 
                             {newRoomType === 'private' && (
                                 <div className="animate-in slide-in-from-top-2">
-                                    <label className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">Security Key (Password)</label>
-                                    <input required type="text" value={newRoomPassword} onChange={e => setNewRoomPassword(e.target.value)} placeholder="Enter access code..." className="w-full bg-indigo-50/50 border border-indigo-200 rounded-xl px-4 py-3 text-sm font-bold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
+                                    <label className={`text-xs font-bold uppercase tracking-widest block mb-1 ${theme === 'dark' ? 'text-cyan-400' : 'text-indigo-400'}`}>Security Key (Password)</label>
+                                    <input required type="text" value={newRoomPassword} onChange={e => setNewRoomPassword(e.target.value)} placeholder="Enter access code..." className={`w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 transition-all ${theme === 'dark' ? 'bg-cyan-900/10 border border-cyan-500/30 text-cyan-200 focus:ring-cyan-500/20' : 'bg-indigo-50/50 border border-indigo-200 text-indigo-900 focus:ring-indigo-500/20'}`} />
                                 </div>
                             )}
 
-                            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-500/30 transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-2">
+                            <button type="submit" className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-2 ${t.primaryBtn}`}>
                                 <i className="fa-solid fa-bolt"></i> Establish Uplink
                             </button>
                         </form>
@@ -626,13 +633,13 @@ const ChatRoom: React.FC = () => {
 
             {/* --- MODAL: PASSWORD PROMPT --- */}
             {showPasswordPrompt && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center animate-in zoom-in-95 border-2 border-indigo-100">
-                        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600 text-2xl shadow-inner">
+                <div className={`fixed inset-0 z-50 flex items-center justify-center animate-in fade-in ${t.modalOverlay}`}>
+                    <div className={`rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center animate-in zoom-in-95 border-2 ${t.modalBg} ${theme === 'dark' ? 'border-cyan-900/50' : 'border-indigo-100'}`}>
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner ${theme === 'dark' ? 'bg-cyan-900/30 text-cyan-400' : 'bg-indigo-100 text-indigo-600'}`}>
                             <i className="fa-solid fa-shield-halved"></i>
                         </div>
-                        <h3 className="text-xl font-black text-slate-800 mb-2">Restricted Access</h3>
-                        <p className="text-xs text-slate-500 mb-6 px-4">This node is encrypted. Please authenticate to proceed.</p>
+                        <h3 className={`text-xl font-black mb-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-800'}`}>Restricted Access</h3>
+                        <p className={`text-xs mb-6 px-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>This node is encrypted. Please authenticate to proceed.</p>
 
                         <input
                             autoFocus
@@ -641,12 +648,12 @@ const ChatRoom: React.FC = () => {
                             onChange={e => setRoomPasswordInput(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && submitPassword()}
                             placeholder="Enter Security Key"
-                            className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-center font-bold text-slate-800 mb-4 focus:border-indigo-500 focus:outline-none transition-colors"
+                            className={`w-full border-2 rounded-xl px-4 py-3 text-center font-bold mb-4 focus:outline-none transition-colors ${theme === 'dark' ? 'bg-slate-900 border-slate-700 text-white focus:border-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-indigo-500'}`}
                         />
 
                         <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => setShowPasswordPrompt(null)} className="py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">Cancel</button>
-                            <button onClick={submitPassword} className="py-3 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all">Unlock</button>
+                            <button onClick={() => setShowPasswordPrompt(null)} className={`py-3 rounded-xl font-bold transition-colors ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'}`}>Cancel</button>
+                            <button onClick={submitPassword} className={`py-3 rounded-xl font-bold shadow-lg transition-all ${t.primaryBtn}`}>Unlock</button>
                         </div>
                     </div>
                 </div>

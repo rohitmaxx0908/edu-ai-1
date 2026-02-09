@@ -311,3 +311,71 @@ input:-webkit-autofill:active {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Enhanced Black UI Overrides */
+body:has(.dark) {
+  background-color: #000000;
+  color: #e2e8f0;
+}
+
+body:has(.dark) ::selection {
+  background: rgba(6, 182, 212, 0.3);
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+}
+
+/* --- GLOBAL DARK MODE OVERRIDES --- */
+/* Target common glassmorphism containers */
+html.dark .bg-white\/80,
+html.dark .bg-white\/70,
+html.dark .bg-white\/60,
+html.dark .bg-white\/50 {
+  background-color: rgba(9, 9, 11, 0.6) !important;
+  /* Zinc-950/60 */
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px);
+}
+
+/* Specific Card Overrides */
+html.dark .bg-white {
+  background-color: #09090b !important;
+  /* Zinc-950 */
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Text Overrides for Dark Mode */
+html.dark .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+
+/* Slate-100 */
+html.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+/* Slate-200 */
+html.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+/* Slate-300 */
+html.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+/* Slate-400 */
+html.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Slate-500 */
+
+/* Chart Text in Dark Mode */
+html.dark .recharts-text {
+  fill: #94a3b8 !important;
+}
+
+html.dark .recharts-cartesian-grid-horizontal line,
+html.dark .recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.05) !important;
+}
