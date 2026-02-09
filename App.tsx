@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile, AssessmentResult } from './types';
 import { INITIAL_PROFILE } from './constants';
@@ -53,13 +54,10 @@ const App: React.FC = () => {
       setDeferredPrompt(e);
     });
 
-    // Check for updates on mount
     const checkUpdate = async () => {
       if (Capacitor.isNativePlatform()) {
         const update = await checkForUpdates(APP_VERSION);
-        if (update) {
-          setUpdateInfo(update);
-        }
+        if (update) setUpdateInfo(update);
       }
     };
     checkUpdate();
@@ -69,9 +67,7 @@ const App: React.FC = () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
+    if (outcome === 'accepted') setDeferredPrompt(null);
   };
 
   useEffect(() => {
@@ -84,8 +80,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-
-    // Only fetch data if we have a user
     const fetchData = async () => {
       try {
         const { profile, assessment } = await dbService.getUserData();
@@ -100,7 +94,6 @@ const App: React.FC = () => {
     fetchData();
   }, [user]);
 
-  // Scroll to top when switching views (crucial for mobile)
   useEffect(() => {
     if (viewMode !== 'social') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -111,38 +104,26 @@ const App: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      try {
-        await dbService.saveProfile(data);
-      } catch (saveErr) {
-        console.warn("Profile save failed, continuing:", saveErr);
-      }
+      try { await dbService.saveProfile(data); } catch (e) { console.warn("Profile save warning:", e); }
 
       setProfile(data);
-
       const result = await assessCareer(data);
-      if (!result || !result.learning_roadmap) {
-        throw new Error("The Twin Agent generated an unstable dataset.");
-      }
+      if (!result || !result.learning_roadmap) throw new Error("The Twin Agent generated an unstable dataset.");
 
       setAssessment(result);
       await dbService.saveAssessment(result);
-
     } catch (err: any) {
       console.error("Critical AI Error:", err);
-      console.warn("Switching to Twin Simulation Protocol due to uplink failure.");
-
+      console.warn("Switching to Twin Simulation Protocol.");
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { getMockAssessment } = await import('./services/geminiService');
         const mockResult = await getMockAssessment();
-
         setAssessment(mockResult);
         try { await dbService.saveAssessment(mockResult); } catch (e) { console.error("DB Save failed", e); }
-
         setError(null);
       } catch (fallbackErr) {
-        const userFriendlyError = 'The Digital Twin signal was lost during synchronization.';
-        setError(userFriendlyError);
+        setError('The Digital Twin signal was lost during synchronization.');
       }
     } finally {
       setLoading(false);
@@ -151,11 +132,7 @@ const App: React.FC = () => {
 
   const handleUpdateProfile = async (newProfile: UserProfile) => {
     setProfile(newProfile);
-    try {
-      await dbService.saveProfile(newProfile);
-    } catch (err) {
-      console.error("Background sync failed", err);
-    }
+    try { await dbService.saveProfile(newProfile); } catch (e) { console.error("Sync failed", e); }
   };
 
   const resetAssessment = async () => {
@@ -172,184 +149,153 @@ const App: React.FC = () => {
       await signOut(auth);
       setProfile(null);
       setAssessment(null);
-    } catch (error) {
-      console.error("Error signing out", error);
-    }
+    } catch (error) { console.error("Error signing out", error); }
   };
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-slate-700 border-t-indigo-500 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#050b14] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+        <div className="w-16 h-16 border-4 border-slate-800 border-t-indigo-500 rounded-full animate-spin z-10 shadow-[0_0_30px_rgba(99,102,241,0.5)]"></div>
       </div>
     );
   }
 
-  if (!user) {
-    return <Auth />;
-  }
+  if (!user) return <Auth />;
 
-  // Render Content based on viewMode
+  // Render Logic
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 bg-indigo-100 rounded-full animate-pulse"></div>
+        <div className="flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in zoom-in-95 duration-700">
+          <div className="relative mb-8">
+            <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 animate-pulse"></div>
+            <div className="w-20 h-20 border-4 border-slate-200/50 border-t-indigo-600 rounded-full animate-spin relative z-10"></div>
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <i className="fa-solid fa-bolt text-indigo-500 animate-pulse"></i>
             </div>
           </div>
-          <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest mt-8">Syncing Digital Twin</h3>
-          <p className="text-slate-400 mt-2 text-sm font-bold uppercase tracking-widest">Grounding against industry datasets...</p>
+          <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">Syncing Digital Twin</h3>
+          <p className="text-slate-400 mt-2 text-xs font-bold uppercase tracking-[0.2em] animate-pulse">Establishing Uplink...</p>
         </div>
       );
     }
 
     if (error) {
       return (
-        <div className="max-w-xl mx-auto mt-20 bg-white border border-red-100 p-8 rounded-[2rem] text-center shadow-xl">
-          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <i className="fa-solid fa-triangle-exclamation text-2xl"></i>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="max-w-md w-full bg-white/50 backdrop-blur-xl border border-red-100 p-10 rounded-[2.5rem] text-center shadow-2xl shadow-red-500/5 hover:scale-[1.02] transition-transform duration-500">
+            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-4 ring-red-50">
+              <i className="fa-solid fa-triangle-exclamation text-3xl animate-pulse"></i>
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2">Signal Lost</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed font-medium">{error}</p>
+            <button
+              onClick={() => { setError(null); setAssessment(null); }}
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl hover:bg-red-600 transition-all font-black uppercase tracking-widest text-xs shadow-xl shadow-slate-900/20 hover:shadow-red-600/30 hover:-translate-y-1 relative overflow-hidden group"
+            >
+              <span className="relative z-10">Retry Uplink</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            </button>
           </div>
-          <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Twin Sync Failure</h3>
-          <p className="text-slate-600 text-sm mt-4 mb-8 leading-relaxed font-medium bg-red-50 p-6 rounded-2xl border border-red-100">{error}</p>
-          <button
-            onClick={() => { setError(null); setAssessment(null); }}
-            className="px-8 py-4 bg-slate-900 text-white rounded-xl hover:bg-indigo-600 transition-all font-black uppercase tracking-widest text-[10px] shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-1"
-          >
-            Retry Uplink
-          </button>
         </div>
       );
     }
 
-    if (!assessment || !profile) {
+    if (!assessment || !profile) return <ProfileForm initialData={profile || INITIAL_PROFILE} onSubmit={handleAssessment} />;
+
+    const components: Record<ViewMode, React.ReactElement> = {
+      dashboard: <Dashboard assessment={assessment} profile={profile} onReset={resetAssessment} />,
+      academics: <Academics profile={profile} assessment={assessment} onUpdateProfile={handleUpdateProfile} />,
+      mentor: <ChatMentor profile={profile} assessment={assessment} />,
+      social: <SocialHub profile={profile} />,
+      news: <NewsHub careerTarget={profile.careerTarget.desiredRole} />,
+      discuss: <ChatRoom />
+    };
+
+    // Wrap interactive views for desktop consistency
+    if (['mentor', 'news', 'discuss'].includes(viewMode)) {
       return (
-        <ProfileForm
-          initialData={profile || INITIAL_PROFILE}
-          onSubmit={handleAssessment}
-        />
+        <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-90px)] overflow-hidden rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50 bg-white/80 backdrop-blur-3xl relative animate-in fade-in zoom-in-95 duration-500 ring-1 ring-white/60">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay pointer-events-none"></div>
+          {components[viewMode]}
+        </div>
       );
     }
 
-    switch (viewMode) {
-      case 'dashboard':
-        return <Dashboard assessment={assessment} profile={profile} onReset={resetAssessment} />;
-      case 'academics':
-        return <Academics profile={profile} assessment={assessment} onUpdateProfile={handleUpdateProfile} />;
-      case 'mentor':
-        return (
-          <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
-            <ChatMentor profile={profile} assessment={assessment} />
-          </div>
-        );
-      case 'news':
-        return (
-          <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
-            <NewsHub careerTarget={profile.careerTarget.desiredRole} />
-          </div>
-        );
-      case 'discuss':
-        return (
-          <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-85px)] overflow-hidden rounded-[2rem] border border-slate-200 shadow-sm bg-white">
-            <ChatRoom />
-          </div>
-        );
-      case 'social':
-        return <SocialHub profile={profile} />;
-      default:
-        return <Dashboard assessment={assessment} profile={profile} onReset={resetAssessment} />;
-    }
+    return components[viewMode] || components.dashboard;
   };
 
-  const navClass = "sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm transition-all duration-300";
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-['Outfit'] selection:bg-indigo-500/30">
-      {/* Premium Glass Header */}
-      <nav className={navClass}>
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 sm:h-20">
-            {/* Logo Section */}
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setViewMode('dashboard')}>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                  <div className="bg-slate-900 p-2.5 rounded-xl flex items-center justify-center relative border border-slate-800 shadow-lg group-hover:scale-105 transition-transform group-active:scale-95">
-                    <i className="fa-solid fa-bolt-lightning text-white text-sm"></i>
-                  </div>
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-['Outfit'] selection:bg-indigo-500/30 overflow-x-hidden relative">
+
+      {/* Global Ambient Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-indigo-500/5 rounded-full blur-[120px] mix-blend-multiply animate-[pulse_10s_ease-in-out_infinite]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-cyan-500/5 rounded-full blur-[100px] mix-blend-multiply animate-[pulse_12s_ease-in-out_infinite_reverse]"></div>
+      </div>
+
+      {/* Desktop Header */}
+      {assessment && (
+        <nav className="sticky top-0 z-[100] px-6 py-4 transition-all duration-300">
+          <div className="max-w-[1600px] mx-auto bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] px-6 py-3 flex justify-between items-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/50 via-white/20 to-transparent pointer-events-none"></div>
+
+            <div className="flex items-center gap-8 relative z-10">
+              <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setViewMode('dashboard')}>
+                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform group-hover:rotate-6">
+                  <i className="fa-solid fa-bolt-lightning text-sm"></i>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">EDU AI</span>
-                  <span className="hidden sm:inline text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none mt-0.5">Career Engine</span>
+                <div>
+                  <h1 className="text-lg font-black text-slate-900 leading-none tracking-tight group-hover:text-indigo-600 transition-colors">EDU AI</h1>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Pilot v{APP_VERSION}</p>
                 </div>
               </div>
 
-              {/* Desktop Navigation */}
-              {assessment && (
-                <div className="hidden md:flex items-center gap-1 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/50 ml-4">
-                  {NAV_ITEMS.map((item) => (
+              {/* Desktop Nav Pills */}
+              <div className="hidden lg:flex items-center bg-slate-100/50 p-1 rounded-2xl border border-slate-200/50">
+                {NAV_ITEMS.map((item) => {
+                  const isActive = viewMode === item.id;
+                  return (
                     <button
                       key={item.id}
                       onClick={() => setViewMode(item.id)}
-                      className={`relative px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center gap-2 ${viewMode === item.id
-                        ? 'bg-white text-slate-900 shadow-md scale-105 ring-1 ring-black/5'
-                        : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'
-                        }`}
+                      className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${isActive ? 'bg-white text-slate-900 shadow-sm scale-105' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'}`}
                     >
-                      <i className={`fa-solid ${item.icon} ${viewMode === item.id ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-600'}`}></i>
+                      <i className={`fa-solid ${item.icon} ${isActive ? 'text-indigo-500' : 'opacity-70'}`}></i>
                       {item.label}
                     </button>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Right Side Actions */}
-            <div className="flex items-center gap-4">
-              {assessment && (
-                <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 shadow-sm">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  <span className="text-[9px] font-black uppercase tracking-widest">Live Uplink</span>
-                </div>
-              )}
+            <div className="flex items-center gap-4 relative z-10">
+              {/* Status Indicator */}
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Online</span>
+              </div>
 
-              {deferredPrompt && (
-                <button
-                  onClick={handleInstallClick}
-                  className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95"
-                >
-                  <i className="fa-solid fa-download"></i> <span className="hidden sm:inline">Install App</span>
-                </button>
-              )}
+              <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
 
-              <div className="flex items-center gap-3 pl-6 border-l border-slate-200 ml-2">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 border-2 border-white shadow-md flex items-center justify-center group cursor-pointer hover:border-indigo-100 transition-all">
-                  <span className="text-sm font-black text-indigo-600 group-hover:scale-110 transition-transform">
-                    {user.displayName ? user.displayName[0].toUpperCase() : user.email?.[0].toUpperCase()}
-                  </span>
+              <div className="flex items-center gap-3 group cursor-pointer" onClick={handleSignOut}>
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-bold text-slate-900">{user.displayName || 'Agent'}</p>
+                  <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest group-hover:text-red-500 transition-colors">Disconnect</p>
                 </div>
-                <div className="hidden sm:flex flex-col">
-                  <span className="text-[11px] font-bold text-slate-900 truncate max-w-[100px] leading-tight">
-                    {user.displayName || 'User'}
-                  </span>
-                  <button onClick={handleSignOut} className="text-[9px] text-slate-400 hover:text-red-500 font-bold transition-colors text-left uppercase tracking-wider mt-0.5">
-                    Sign Out
-                  </button>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 border-2 border-white shadow-md flex items-center justify-center text-indigo-700 font-black text-sm">
+                  {user.displayName ? user.displayName[0].toUpperCase() : 'A'}
                 </div>
-                <button onClick={handleSignOut} className="sm:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
-                  <i className="fa-solid fa-power-off text-sm"></i>
-                </button>
               </div>
             </div>
           </div>
-        </div>
-
-      </nav>
+        </nav>
+      )}
 
       <UpdateModal
         isOpen={!!updateInfo}
@@ -360,80 +306,51 @@ const App: React.FC = () => {
         releaseNotes={updateInfo?.releaseNotes}
       />
 
-      <main className={`flex-1 transition-all duration-500 pb-28 sm:pb-8 ${viewMode === 'mentor' || viewMode === 'news' || viewMode === 'discuss' ? 'p-4 sm:p-6 lg:p-8' : 'px-4 pt-8 sm:px-6 lg:px-8'}`}>
+      <main className={`flex-1 relative z-10 transition-all duration-500 pb-32 lg:pb-8 ${viewMode === 'dashboard' ? 'px-4 lg:px-8' : 'px-4 lg:px-8 pt-4'}`}>
         {renderContent()}
       </main>
 
-      {(!assessment || (viewMode !== 'mentor' && viewMode !== 'news' && viewMode !== 'discuss')) && (
-        <footer className="py-12 border-t border-slate-200 bg-white relative overflow-hidden mt-auto hidden md:block">
-          {/* Hiding footer on mobile completely to avoid clutter with bottom nav */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 opacity-20"></div>
-          <div className="max-w-7xl mx-auto px-4 flex flex-col items-center">
-            <div className="flex items-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-              <i className="fa-solid fa-bolt-lightning text-slate-400"></i>
-              <span className="text-lg font-black text-slate-300">EDU AI</span>
-            </div>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">
-              Edu AI &bull; Grounding Engine v{APP_VERSION}
-            </p>
-          </div>
-        </footer>
-      )
-      }
-
-      {/* Premium Mobile Bottom Navigation */}
+      {/* Mobile Floating Island Ecosystem */}
       {assessment && (
-        <div className="md:hidden fixed bottom-0 left-0 w-full z-[9999]">
-          <div className="bg-white/90 backdrop-blur-2xl border-t border-indigo-50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[1.5rem] pb-2 pt-1">
-            <div className="flex items-center justify-around px-2">
-              {NAV_ITEMS.map((item) => {
-                const isActive = viewMode === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setViewMode(item.id)}
-                    className="relative group p-2 flex flex-col items-center justify-end h-16 w-14"
-                  >
-                    {/* Floating Active Background */}
-                    {isActive && (
-                      <div className="absolute top-1 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/30 animate-in zoom-in-50 duration-300"></div>
-                    )}
+        <div className="lg:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-auto min-w-[320px] z-[1000]">
+          {/* Glass Dock */}
+          <div className="bg-slate-950/80 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] rounded-[2.5rem] p-2 flex items-center justify-between relative overflow-hidden ring-1 ring-white/5 mx-4">
 
-                    {/* Icon */}
-                    <div className={`relative z-10 transition-all duration-300 ${isActive ? '-translate-y-2 text-white' : 'text-slate-400 group-hover:text-indigo-500'}`}>
-                      <i className={`text-lg fa-solid ${item.icon}`}></i>
+            {/* Ambient inner glow */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-500/10 to-transparent pointer-events-none"></div>
+
+            {NAV_ITEMS.map((item) => {
+              const isActive = viewMode === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setViewMode(item.id);
+                    // Haptic feedback pattern if available (omitted for web)
+                  }}
+                  className={`relative w-12 h-12 flex items-center justify-center rounded-full transition-all duration-500 ${isActive ? 'scale-110' : 'hover:bg-white/5 active:scale-95'}`}
+                >
+                  {/* Active Pill Background */}
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] animate-in zoom-in-50 duration-300">
+                      {/* Inner spark */}
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.4),transparent_70%)] rounded-full"></div>
                     </div>
+                  )}
 
-                    {/* Label */}
-                    <span className={`relative z-10 text-[9px] font-bold uppercase tracking-tight transition-all duration-300 ${isActive ? 'translate-y-[-2px] text-indigo-600 opacity-100' : 'translate-y-2 opacity-0 h-0'}`}>
-                      {item.label}
-                    </span>
+                  {/* Icon */}
+                  <i className={`fa-solid ${item.icon} relative z-10 text-lg transition-all duration-300 ${isActive ? 'text-white drop-shadow-sm' : 'text-slate-500 group-hover:text-slate-300'}`}></i>
 
-                    {/* Inactive Dot */}
-                    {!isActive && (
-                      <span className="absolute bottom-2 w-1 h-1 rounded-full bg-slate-200 group-hover:bg-indigo-300 transition-colors"></span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                  {/* Active Dot Indicator */}
+                  {isActive && (
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_5px_white]"></div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
-
-      <style>{`
-         .no-scrollbar::-webkit-scrollbar {
-           display: none;
-         }
-         .no-scrollbar {
-           -ms-overflow-style: none;
-           scrollbar-width: none;
-         }
-         /* Safe area support for newer phones */
-         .pb-safe {
-            padding-bottom: env(safe-area-inset-bottom);
-         }
-      `}</style>
     </div>
   );
 };

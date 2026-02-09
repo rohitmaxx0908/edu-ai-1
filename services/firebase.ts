@@ -5,12 +5,15 @@ import { getDatabase } from "firebase/database";
 import {
     getAuth,
     GoogleAuthProvider,
+    GithubAuthProvider,
     signInWithPopup,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signInWithCredential,
     signOut,
     onAuthStateChanged,
+    signInWithPhoneNumber,
+    RecaptchaVerifier,
     User
 } from "firebase/auth";
 
@@ -32,6 +35,7 @@ const db = getFirestore(app);
 const rtdb = getDatabase(app);
 const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
+const githubProvider = new GithubAuthProvider();
 
 export {
     auth,
@@ -40,12 +44,16 @@ export {
     rtdb,
     storage,
     googleProvider,
+    githubProvider,
     signInWithPopup,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signInWithCredential,
     signOut,
     onAuthStateChanged,
-    GoogleAuthProvider
+    signInWithPhoneNumber,
+    RecaptchaVerifier,
+    GoogleAuthProvider,
+    GithubAuthProvider
 };
 export type { User };

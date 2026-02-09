@@ -74,7 +74,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
   ];
 
   return (
-    <div className="w-full max-w-5xl mx-auto min-h-[650px] flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-3xl rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/10 relative my-8 animate-in zoom-in-95 duration-700">
+    <div className="w-full max-w-5xl mx-auto min-h-screen md:min-h-[650px] flex flex-col md:flex-row bg-slate-900/80 backdrop-blur-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/10 relative my-0 md:my-8 animate-in zoom-in-95 duration-700">
       {/* Ambient Backlighting */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse mix-blend-screen"></div>
@@ -82,10 +82,10 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
       </div>
 
-      {/* Left Sidebar (Progress) */}
-      <div className="md:w-72 bg-slate-950/60 backdrop-blur-xl border-r border-white/5 p-8 relative z-10 flex flex-col justify-between">
-        <div>
-          <div className="mb-10 flex items-center gap-4">
+      {/* Responsive Sidebar (Progress) */}
+      <div className="w-full md:w-72 bg-slate-950/90 backdrop-blur-xl md:bg-slate-950/60 sticky top-0 md:relative z-50 border-b md:border-b-0 md:border-r border-white/5 p-4 md:p-8 flex md:flex-col justify-between items-center md:items-stretch gap-4 overflow-x-auto no-scrollbar md:overflow-visible">
+        <div className="flex md:flex-col items-center md:items-stretch gap-6 w-full">
+          <div className="hidden md:flex items-center gap-4 mb-6">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
               <i className="fa-solid fa-fingerprint text-white text-xl"></i>
             </div>
@@ -95,24 +95,24 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ initialData, onSubmit }) => {
             </div>
           </div>
 
-          <div className="space-y-6 relative pl-2">
-            {/* Connector Line */}
-            <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-800 -z-10">
+          <div className="flex md:flex-col gap-3 md:gap-6 relative pl-2 min-w-max md:min-w-0">
+            {/* Connector Line (Desktop Only) */}
+            <div className="hidden md:block absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-800 -z-10">
               <div className="w-full bg-indigo-500 transition-all duration-500 ease-out" style={{ height: `${((step - 1) / (totalSteps - 1)) * 100}%` }}></div>
             </div>
 
             {steps.map((s) => (
-              <div key={s.id} className={`flex items-center gap-4 transition-all duration-300 ${step === s.id ? 'opacity-100 translate-x-1' : step > s.id ? 'opacity-50' : 'opacity-30'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-[2px] transition-all duration-500 ${step === s.id ? 'bg-indigo-600 border-indigo-600 shadow-[0_0_20px_rgba(99,102,241,0.6)] scale-110' : step > s.id ? 'bg-slate-900 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-700'}`}>
-                  {step > s.id ? <i className="fa-solid fa-check text-[10px]"></i> : <i className={`fa-solid ${s.icon} text-[10px]`}></i>}
+              <div key={s.id} className={`flex items-center gap-3 md:gap-4 transition-all duration-300 ${step === s.id ? 'opacity-100 scale-105 md:translate-x-1' : step > s.id ? 'opacity-50' : 'opacity-30'}`}>
+                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-[2px] transition-all duration-500 flex-shrink-0 ${step === s.id ? 'bg-indigo-600 border-indigo-600 shadow-[0_0_20px_rgba(99,102,241,0.6)]' : step > s.id ? 'bg-slate-900 border-indigo-500/50 text-indigo-400' : 'bg-slate-950 border-slate-800 text-slate-700'}`}>
+                  {step > s.id ? <i className="fa-solid fa-check text-[10px]"></i> : <i className={`fa-solid ${s.icon} text-[10px] md:text-sm`}></i>}
                 </div>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${step === s.id ? 'text-white' : 'text-slate-400'}`}>{s.label}</span>
+                <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest whitespace-nowrap ${step === s.id ? 'text-white' : 'text-slate-400 hidden md:block'}`}>{s.label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5 text-center">
+        <div className="hidden md:block bg-slate-900/50 p-4 rounded-xl border border-white/5 text-center mt-auto">
           <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Session ID</p>
           <p className="text-xs font-mono text-indigo-400">8xF-{Math.floor(Math.random() * 9000) + 1000}</p>
         </div>

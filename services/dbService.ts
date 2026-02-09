@@ -1,6 +1,6 @@
 import { UserProfile, AssessmentResult } from '../types';
-import { rtdb, auth } from './firebase';
-import { ref, get, set, child } from "firebase/database";
+import { db, auth } from './firebase';
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const IS_MOCK_MODE = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true';
 
@@ -20,13 +20,13 @@ export const dbService = {
         const user = auth.currentUser;
         if (!user) return { profile, assessment };
 
-        // 2. Try Firebase Realtime Database
+        // 2. Try Firestore
         try {
-            const dbRef = ref(rtdb);
-            const snapshot = await get(child(dbRef, `users/${user.uid}`));
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
 
-            if (snapshot.exists()) {
-                const data = snapshot.val();
+            if (docSnap.exists()) {
+                const data = docSnap.data();
                 if (data.profile) {
                     profile = data.profile;
                     localStorage.setItem('enhance_ai_profile', JSON.stringify(data.profile));
@@ -53,7 +53,8 @@ export const dbService = {
         if (!user) return;
 
         try {
-            await set(ref(rtdb, `users/${user.uid}/profile`), data);
+            const docRef = doc(db, "users", user.uid);
+            await setDoc(docRef, { profile: data }, { merge: true });
         } catch (err) {
             console.error('Firebase save failed:', err);
         }
@@ -69,7 +70,8 @@ export const dbService = {
         if (!user) return;
 
         try {
-            await set(ref(rtdb, `users/${user.uid}/assessment`), data);
+            const docRef = doc(db, "users", user.uid);
+            await setDoc(docRef, { assessment: data }, { merge: true });
         } catch (err) {
             console.error('Firebase save failed:', err);
         }
