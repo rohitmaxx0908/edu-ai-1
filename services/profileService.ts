@@ -11,15 +11,25 @@ export async function createUserProfile(user: any) {
 }
 
 export async function updateSkill(skill: string, level: number) {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
   return await supabase.from("user_skills").upsert({
-    user_id: (await supabase.auth.getUser()).data.user.id,
+    user_id: user.id,
     skill_name: skill,
     skill_level: level
   });
 }
 
 export async function getUserTwin() {
-  const user = (await supabase.auth.getUser()).data.user;
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
 
   const profile = await supabase.from("profiles").select("*").eq("id", user.id).single();
   const skills = await supabase.from("user_skills").select("*").eq("user_id", user.id);
