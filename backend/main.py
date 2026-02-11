@@ -15,14 +15,17 @@ load_dotenv()
 
 from supabase import create_client, Client
 from openai import OpenAI
-import google.generativeai as genai
+from google import genai
 import logging
 
 # Configure Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+gemini_client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    GEMINI_MODEL = "gemini-1.5-flash" # Use stable flash model
+    try:
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Failed to initialize Gemini client: {e}")
 import json
 import traceback
 
@@ -83,20 +86,20 @@ async def health():
         "supabase": "unknown",
         "openai": "unknown"
     }
-    
+
     # Check Supabase
     try:
         supabase.table("user_data").select("count", count="exact").limit(1).execute()
         status["supabase"] = "connected"
     except Exception as e:
         status["supabase"] = f"error: {str(e)}"
-        
+
     # Check OpenAI
     if openai_client:
         status["openai"] = "configured"
     else:
         status["openai"] = "missing_key"
-        
+
     return success_response(status)
 
 TECH_FEEDS = [
@@ -133,7 +136,7 @@ async def get_rss_feeds():
             return success_response(feeds)
     except Exception as e:
         print(f"Error fetching RSS: {e}")
-    
+
     # Fallback demo data
     demo_feeds = [
         "Google Announces New AI Capabilities - Google has unveiled their latest AI models for 2026 with improved reasoning...",
@@ -147,15 +150,15 @@ async def get_rss_feeds():
 
 def fetch_tech_news(topic="technology"):
     url = "https://gnews.io/api/v4/top-headlines"
-    
+
     clean_topic = topic.strip().lower() if topic else "technology"
     categories = ["breaking-news", "world", "nation", "business", "technology", "entertainment", "sports", "science", "health"]
-    
+
     params = {
         "lang": "en",
         "apikey": GNEWS_API_KEY
     }
-    
+
     if clean_topic in categories:
         params["topic"] = clean_topic
     else:
@@ -207,7 +210,7 @@ def create_embedding(text):
         raise ValueError("OpenAI client not configured")
     if not text or not text.strip():
         return [0.0] * 1536 # Return zero vector for empty text
-        
+
     return openai_client.embeddings.create(
         model="text-embedding-3-small",
         input=text
@@ -248,6 +251,15 @@ async def search_knowledge(query: str):
 SYSTEM_PROMPT = """
 You are the "Twin Agent" - a sophisticated digital career companion grounded in market reality.
 Your core directive is to optimize the user's career trajectory using deterministic logic and data-driven insights.
+
+DOMAIN RESTRICTION - MANDATORY:
+You are ONLY allowed to answer questions related to:
+- Education (degrees, courses, certifications, learning paths)
+- Technology (software, hardware, engineering, companies, industries, innovations, news)
+- Career Growth (job search, interviews, skill gaps, salaries within tech)
+
+If the question is outside these domains (e.g., medical advice, sports, general entertainment, cooking, etc.), you MUST reply exactly with:
+"I can help only with education and technology-related topics."
 
 Identity & Tone:
 - You are NOT a generic chatbot. You are a "Neural Twin" synchronized with the user's profile.
@@ -306,20 +318,20 @@ def execute_tool_call(tool_call):
     """Execute the tool requested by the model"""
     func_name = tool_call.function.name
     args = json.loads(tool_call.function.arguments)
-    
+
     if func_name == "search_knowledge_base":
         query = args.get("query")
         embedding = create_embedding(query)
         context = get_context(embedding)
         return json.dumps(context)
-    
+
     elif func_name == "search_industry_news":
         topic = args.get("topic")
         articles = fetch_tech_news(topic)
         # Summarize articles to save tokens
         summary = [f"{a['title']} - {a['description']}" for a in articles[:3]]
         return json.dumps(summary)
-    
+
     return "Error: Function not found"
 
 async def run_agent(query: str):
@@ -375,7 +387,7 @@ async def run_agent(query: str):
             messages=messages
         )
         return final_response.choices[0].message.content
-    
+
     return response_message.content
 
 @chat_router.post("/ask")
@@ -383,7 +395,7 @@ async def ask_ai(payload: dict):
     query = payload.get("query")
     if not query:
         return JSONResponse(status_code=400, content={"data": None, "error": "Query is required"})
-    
+
     try:
         # Use Agentic RAG
         answer = await run_agent(query)
@@ -391,7 +403,7 @@ async def ask_ai(payload: dict):
     except Exception as e:
         print(f"Agent error: {e}")
         traceback.print_exc()
-        
+
         # Fallback to simple direct answer (OpenAI)
         if openai_client:
              try:
@@ -405,17 +417,19 @@ async def ask_ai(payload: dict):
                 return success_response({"answer": response.choices[0].message.content})
              except Exception as e:
                  print(f"OpenAI fallback error: {e}")
-        
+
         # Super Fallback: Use Gemini (if available)
-        if GEMINI_API_KEY:
+        if gemini_client:
             try:
                 print("Using Gemini fallback...")
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                response = model.generate_content(f"{SYSTEM_PROMPT}\n\nUser: {query}")
+                response = gemini_client.models.generate_content(
+                    model="gemini-2.5-flash-lite",
+                    contents=f"{SYSTEM_PROMPT}\n\nUser: {query}"
+                )
                 return success_response({"answer": response.text})
             except Exception as e:
                 print(f"Gemini error: {e}")
-                 
+
         return success_response({"answer": "I'm having trouble connecting to my brain. Please try again."})
 
 # ============= ASSESSMENT ENDPOINTS =============
@@ -487,7 +501,7 @@ MOCK_ASSESSMENT = {
 async def assess_career_profile(profile: ProfileData):
     try:
         profile_dict = profile.dict()
-        
+
         current_date = datetime.now().strftime("%Y-%m-%d")
         system_prompt = f"""You are a career assessment AI. Analyze the user's profile and provide a structured assessment.
 
@@ -518,7 +532,7 @@ Provide exactly 6 learning roadmap items with real URLs. Keep descriptions under
             max_tokens=2000,
             response_format={"type": "json_object"}
         )
-        
+
         result = json.loads(response.choices[0].message.content)
         return success_response(result)
     except Exception as e:
@@ -532,9 +546,9 @@ async def fetch_opportunities(payload: dict):
         profile = payload.get("profile", {})
         career_target = profile.get("careerTarget", {})
         skill_inventory = profile.get("skillInventory", {})
-        
+
         desired_role = career_target.get("desiredRole", "Software Engineer")
-        
+
         # Extract top skills
         skill_labels = {
             "programmingFundamentals": "Fundamentals",
@@ -545,10 +559,10 @@ async def fetch_opportunities(payload: dict):
             "mathStats": "Math",
             "aiMl": "AI/ML"
         }
-        
+
         top_skills = [skill_labels.get(k, k) for k, v in skill_inventory.items() if v >= 3]
         skills_str = ", ".join(top_skills) if top_skills else "General Tech"
-        
+
         prompt = f"""Find REAL, ACTIVE (2025-2026) career opportunities for a {desired_role}.
 Skills: {skills_str}
 
@@ -579,7 +593,7 @@ Find 5-8 diverse opportunities. Use Google Search to find real links."""
             max_tokens=3000,
             response_format={"type": "json_object"}
         )
-        
+
         opportunities = json.loads(response.choices[0].message.content)
         return success_response(opportunities)
     except Exception as e:
@@ -663,13 +677,13 @@ async def save_profile(payload: dict):
         profile = payload.get("profile")
         if not profile:
             return JSONResponse(status_code=400, content={"data": None, "error": "Profile is required"})
-        
+
         result = supabase.table("user_data").upsert({
             "user_id": DEMO_USER_ID,
             "profile": profile,
             "updated_at": "now()"
         }, on_conflict="user_id").execute()
-        
+
         return success_response({"saved": True})
     except Exception as e:
         return success_response({"saved": False, "warning": "Profile persistence unavailable"})
@@ -680,13 +694,13 @@ async def save_assessment(payload: dict):
         assessment = payload.get("assessment")
         if not assessment:
             return JSONResponse(status_code=400, content={"data": None, "error": "Assessment is required"})
-        
+
         result = supabase.table("user_data").upsert({
             "user_id": DEMO_USER_ID,
             "assessment": assessment,
             "updated_at": "now()"
         }, on_conflict="user_id").execute()
-        
+
         return success_response({"saved": True})
     except Exception as e:
         return success_response({"saved": False, "warning": "Assessment persistence unavailable"})
@@ -695,10 +709,10 @@ async def save_assessment(payload: dict):
 async def get_user_data():
     try:
         result = supabase.table("user_data").select("profile, assessment").eq("user_id", DEMO_USER_ID).single().execute()
-        
+
         if not result.data:
             return success_response({"profile": None, "assessment": None})
-        
+
         return success_response({
             "profile": result.data.get("profile"),
             "assessment": result.data.get("assessment")

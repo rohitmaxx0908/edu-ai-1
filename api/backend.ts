@@ -3,7 +3,17 @@
  * All calls to the FastAPI backend go through here
  */
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+import { Capacitor } from '@capacitor/core';
+
+const getBackendUrl = () => {
+  if (import.meta.env.VITE_BACKEND_URL) return import.meta.env.VITE_BACKEND_URL;
+  if (Capacitor.getPlatform() === 'android') {
+    return 'http://10.0.2.2:8000';
+  }
+  return 'http://localhost:8000';
+};
+
+const BACKEND_URL = getBackendUrl();
 
 interface ApiResponse<T> {
   data: T | null;
@@ -168,6 +178,3 @@ export async function fetchRssFeeds(): Promise<string[]> {
   const result: ApiResponse<string[]> = await res.json();
   return result.data || [];
 }
-
-
-

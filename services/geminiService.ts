@@ -2,7 +2,22 @@
 import { GoogleGenAI } from "@google/genai";
 import { UserProfile, AssessmentResult, LearningStep } from "../types";
 
-const SYSTEM_PROMPT = `You are a domain-restricted AI assistant.
+const SYSTEM_PROMPT_CONSTRAINTS = `
+You are the "Twin Agent" digital career companion.
+
+DOMAIN RESTRICTION - MANDATORY:
+You are ONLY allowed to answer questions related to:
+- Education (degrees, courses, certifications, learning paths)
+- Technology (software, hardware, engineering, companies, industries, innovations, news)
+- Career Growth (job search, interviews, skill gaps, salaries within tech)
+
+If the user query is outside these domains (e.g., medical advice, sports, general entertainment, cooking, gaming, etc.), you MUST reply exactly with:
+"I can help only with education and technology-related topics."
+
+Use factual, up-to-date, and concise answers.
+`;
+
+const SYSTEM_PROMPT_ASSESSMENT = `You are a domain-restricted AI assistant.
 
 You are ONLY allowed to answer questions related to:
 - Education (degrees, courses, certifications)
@@ -244,29 +259,54 @@ export const assessCareerProfile = async (profile: UserProfile): Promise<Assessm
 };
 
 // --- Direct Gemini Integration ---
-const API_KEY = "AIzaSyB0zN035I-CsJ7OMNhUeKgZc46uu3kcVZ8";
-// Initialize the client (Note: The user provided snippet used constructor options, checking if apiKey is needed there or elsewhere)
-// For @google/genai, it seems to be: const ai = new GoogleGenAI({ apiKey: ... });
+const API_KEY = "AIzaSyAbMBMhbMn4jyijq6JXBGHEHFI2KSaU_eU";
+// Initialize the client
 const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+async function generateWithRetry(model: string, prompt: string, retries = 3, delay = 2000): Promise<string> {
+  try {
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: [
+        { text: SYSTEM_PROMPT_CONSTRAINTS },
+        { text: prompt }
+      ]
+    });
+    return response.text || "No response generated.";
+  } catch (error: any) {
+    const isQuota = error?.status === 429 || error?.toString().includes('429') || error?.toString().includes('RESOURCE_EXHAUSTED');
+    const isServer = error?.status === 503 || error?.toString().includes('503');
+
+    if ((isQuota || isServer) && retries > 0) {
+      // Exponential backoff
+      await new Promise(res => setTimeout(res, delay));
+      return generateWithRetry(model, prompt, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
 
 export async function askGemini(prompt: string): Promise<{ answer: string }> {
   try {
-    // User requested "gemini-3-flash-preview", but we'll use "gemini-1.5-flash" for stability
-    // unless strictly testing the new preview.
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: prompt // Send simple string as per user example
-    });
-
-    // User's example showed accessing .text directly on the response
-    const text = (response as any).text || "No response generated.";
-
+    const text = await generateWithRetry("gemini-2.5-flash-lite", prompt);
     return { answer: text };
   } catch (error: any) {
     console.error("Gemini API Error Details:", error);
-    if (error.response) {
-      console.error("API Response Error:", error.response);
+
+    // Extract meaningful error message
+    let errorMessage = "Unknown Connection Error";
+    if (error.message) errorMessage = error.message;
+    if (error.response?.data?.error?.message) errorMessage = error.response.data.error.message;
+
+    // User-friendly mapping
+    if (errorMessage.includes("429") || errorMessage.includes("Quota")) {
+      errorMessage = "My neural link is currently at capacity. Please try again in a moment.";
+    } else if (errorMessage.includes("503") || errorMessage.includes("Overloaded")) {
+      errorMessage = "My cognitive engine is rebooting. Please try again in a few seconds.";
+    } else if (errorMessage.includes("404")) {
+      errorMessage = "Model configuration error. Please update the app.";
     }
-    return { answer: `I'm detecting some interference in the neural link. (Error: ${error.message || "Unknown Connection Error"})` };
+
+    return { answer: `I'm detecting some interference in the neural link. (${errorMessage})` };
   }
 }

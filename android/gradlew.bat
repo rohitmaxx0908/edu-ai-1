@@ -55,11 +55,12 @@ goto fail
 
 :findJavaFromJavaHome
 set JAVA_HOME=%JAVA_HOME:"=%
-set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+set JAVA_EXE=%JAVA_HOME%\bin\java.exe
 
 if exist "%JAVA_EXE%" goto execute
 
 echo. 1>&2
+echo CHECKING: [%JAVA_EXE%] 1>&2
 echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME% 1>&2
 echo. 1>&2
 echo Please set the JAVA_HOME variable in your environment to match the 1>&2
